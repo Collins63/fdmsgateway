@@ -135,6 +135,12 @@ Future<Database> initDB() async {
     return db.insert('companyDetails', companyDetails.toMap());
   }
 
+  // add taxpayer details
+  Future<int> addtaxPayerDetails(TaxPayerDetails taxPayerDetails) async{
+    final Database db = await initDB();
+    return db.insert('taxPayerDetails',taxPayerDetails.toMap());
+  }
+
   //add products
   Future<int> addPayMethod(PaymentMethod paymentMethod) async{
     final Database db = await initDB();
@@ -789,6 +795,14 @@ Future<Database> initDB() async {
     return await db.rawQuery('''
       SELECT SUM(taxAmount) as totalTaxAmount
       FROM submittedReceipts
+    ''');
+  }
+
+  Future<List<Map<String, dynamic>>> getTaxPayerDetails() async {
+    final db = await initDB();
+    return await db.rawQuery('''
+      SELECT taxPayerDetails.*
+      FROM taxPayerDetails
     ''');
   }
   

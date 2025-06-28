@@ -6,9 +6,12 @@ import 'package:crypto/crypto.dart';
 import 'package:fdmsgateway/common/button.dart';
 import 'package:fdmsgateway/database.dart';
 import 'package:fdmsgateway/fiscalization/get_status.dart';
+import 'package:fdmsgateway/fiscalization/openDay.dart';
 import 'package:fdmsgateway/fiscalization/ping.dart';
 import 'package:fdmsgateway/fiscalization/sslContextualization.dart';
 import 'package:fdmsgateway/fiscalization/submitReceipts.dart';
+import 'package:fdmsgateway/fiscalization/submittedReceipts.dart';
+import 'package:fdmsgateway/forms/companyDetails.dart';
 import 'package:fdmsgateway/signatureGeneration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -108,12 +111,26 @@ class _MyHomePageState extends State<MyHomePage> {
   String? currentReceiptGlobalNo;
   String? currentUrl;
   String? currentDayNo;
+  String? tradeName;
+  String? taxPayerTIN;
+  String? taxPayerVatNumber;
+  String? serialNo;
+  String? modelName;
+  int receiptCounter = 0;
+  int receiptsSubmittedToFDMS =0;
+  int receiptsPendingSubmission =0;
+
 
 
 
   @override
   void initState() {
     super.initState();
+    getTaxPayerDetails();
+    getlatestFiscalDay();
+    fetchDayReceiptCounter();
+    fetchReceiptsPending();
+    fetchReceiptsSubmitted();
   }
 
 
@@ -499,6 +516,9 @@ Future<int> getlatestFiscalDay() async {
 
   
   ///==================================END FDMS FUNCTIONS========================================
+  ///
+  ///
+  
 
   void startEngine() {
     totalAmount = 0.0;
@@ -1465,6 +1485,17 @@ Future<void> submitReceipt() async {
     }
   }
 
+  void getTaxPayerDetails() async{
+    final data = await dbHelper.getTaxPayerDetails();
+    setState(() {
+      tradeName = data[0]['taxPayerName'];
+      taxPayerTIN = data[0]['taxPayerTin'];
+      taxPayerVatNumber = data[0]['taxPayerVatNumber'];
+      deviceID = data[0]['deviceID'];
+      serialNo = data[0]['deviceModelName'];
+    });
+  }
+
   @override
   void dispose() {
     inputSub?.cancel();
@@ -1522,27 +1553,27 @@ Future<void> submitReceipt() async {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("TAXPAYER NAME: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("TAXPAYER NAME: $tradeName " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("TAXPAYER TIN: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("TAXPAYER TIN: $taxPayerTIN" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("VAT NUMBER: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("VAT NUMBER: $taxPayerVatNumber" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("DEVICE ID: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("DEVICE ID: $deviceID" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("SERIAL NO: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("SERIAL NO: $serialNo" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("MODEL NAME: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("MODEL NAME: Server" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("FISCAL DAY: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("FISCAL DAY: $currentFiscal" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
                           Text("CLOSEDAY TIME: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("RECEIPT COUNTER: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("RECEIPT COUNTER: ${dayReceiptCounter.length}" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("RECEIPTS SUBMITTED: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("RECEIPTS SUBMITTED:${receiptsSubmitted.length} " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
-                          Text("RECEIPTS PENDING: " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          Text("RECEIPTS PENDING: ${receiptsPending.length}" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                         ],
                       ),
                     ),
@@ -1561,7 +1592,7 @@ Future<void> submitReceipt() async {
                               color: Colors.black.withOpacity(0.3), // shadow color
                               spreadRadius: 4, // how much the shadow spreads
                               blurRadius: 10,  // how soft the shadow is
-                              offset: Offset(0, 6), // horizontal and vertical offset
+                              offset: const Offset(0, 6), // horizontal and vertical offset
                             ),
                           ],
                         ),
@@ -1573,6 +1604,7 @@ Future<void> submitReceipt() async {
                               const Text("Engine Options", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                               const SizedBox(height: 20,),
                               CustomOutlineBtn(
+                                icon:const  Icon(Icons.broadcast_on_home_outlined, color: Colors.white,),
                                 text: isRunning? "Processing" :"Start Engine", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1581,6 +1613,7 @@ Future<void> submitReceipt() async {
                               ),
                               const SizedBox(height: 20,),
                               CustomOutlineBtn(
+                                icon:const  Icon(Icons.stop, color: Colors.white,),
                                 text: "Stop Engine", 
                                 color: Colors.red,
                                 color2: Colors.red,
@@ -1615,6 +1648,7 @@ Future<void> submitReceipt() async {
                               const Text("FDMS Options", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                               const SizedBox(height: 20,),
                               CustomOutlineBtn(
+                                icon:const  Icon(Icons.open_in_browser, color: Colors.white,),
                                 text: "Manual Open Day", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1626,6 +1660,7 @@ Future<void> submitReceipt() async {
                               ),
                               const SizedBox(height: 10,),
                               CustomOutlineBtn(
+                                icon: const Icon(Icons.settings_accessibility, color: Colors.white,),
                                 text: "Device Configuration", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1637,6 +1672,7 @@ Future<void> submitReceipt() async {
                               ),
                               const SizedBox(height: 10,),
                               CustomOutlineBtn(
+                                icon:const Icon(Icons.satellite_alt, color: Colors.white,),
                                 text: "Device Status", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1648,6 +1684,7 @@ Future<void> submitReceipt() async {
                               ),
                               const SizedBox(height: 10,),
                               CustomOutlineBtn(
+                                icon: const Icon(Icons.pinch, color: Colors.white,),
                                 text: "Ping", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1659,6 +1696,7 @@ Future<void> submitReceipt() async {
                               ),
                               const SizedBox(height: 10,),
                               CustomOutlineBtn(
+                                icon: const Icon(Icons.send, color: Colors.white,),
                                 text: "Submit Missing Receipts", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1670,6 +1708,7 @@ Future<void> submitReceipt() async {
                               ),
                               const SizedBox(height: 10,),
                               CustomOutlineBtn(
+                                icon:const Icon(Icons.close, color: Colors.white,),
                                 text: "Close Day", 
                                 color: Colors.green,
                                 color2: Colors.green,
@@ -1692,9 +1731,56 @@ Future<void> submitReceipt() async {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed:(){} ,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed:(){
+          showModalBottomSheet(
+            context: context,
+            builder: (BuildContext context) {
+              return Wrap(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.business),
+                    title:const Text('Company Details'),
+                    onTap: () {
+                      Get.to(()=> const CompanydetailsPage());
+                      // handle tap
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.calendar_month_outlined),
+                    title:const Text('Open Day Table'),
+                    onTap: () {
+                      Get.to(()=> const OpenDayPage());
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.send_and_archive_outlined),
+                    title: Text('Submitted Receipts'),
+                    onTap: () {
+                      Get.to(()=> const Submittedreceipts());
+                      // handle tap
+                    },
+                  ),
+                  // ListTile(
+                  //   leading: Icon(Icons.photo_library),
+                  //   title: Text('Choose from Gallery'),
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     // handle tap
+                  //   },
+                  // ),
+                  ListTile(
+                    leading: Icon(Icons.cancel),
+                    title: Text('Cancel'),
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(height: 20,)
+                ],
+              );
+            },
+          );
+        } ,
+        tooltip: 'Menu',
+        child: const Icon(Icons.settings),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }

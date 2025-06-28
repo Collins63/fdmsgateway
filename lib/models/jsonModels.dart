@@ -473,6 +473,73 @@ class CompanyDetails{
   };
 }
 
+
+///Taxpayer DetailsModel//////
+///////////////////////////////////////////////////////
+TaxPayerDetails taxpayerDetailsFromMap(String str) => TaxPayerDetails.fromMap(json.decode(str));
+
+String taxpayerDetailsToMap(TaxPayerDetails data) => json.encode(data.toMap());
+
+class TaxPayerDetails{
+  final int? companyID;
+  final String taxPayerName;
+  final String taxPayerTin;
+  final String  taxPayerVat;
+  final String  taxPayerAddress ;
+  final String email ;
+  final String  phoneNumber ;
+  final String? website ;
+  final String deviceId;
+  final String? activationKey ;
+  final String? deviceModelName ;
+  final String? deviceModelVersion ;
+
+  TaxPayerDetails({
+    this.companyID,
+    required this.taxPayerName,
+    required this.taxPayerTin,
+    required this.taxPayerVat,
+    required this.taxPayerAddress,
+    required this.email,
+    required this.phoneNumber,
+    this.website,
+    required this.deviceId,
+    this.activationKey,
+    this.deviceModelName,
+    this.deviceModelVersion
+  });
+
+  factory TaxPayerDetails.fromMap(Map<String, dynamic> json) => TaxPayerDetails(
+    companyID: json["taxPayerId"],
+    taxPayerName: json["taxPayerName"],
+    taxPayerTin: json["taxPayerTin"],
+    taxPayerVat: json["taxPayerVatNumber"],
+    taxPayerAddress: json["taxPayerAddress"],
+    email: json["taxPayerEmail"],
+    phoneNumber: json["taxPayerPhone"],
+    website: json["taxPayerWebsite"],
+    deviceId: json["deviceID"],
+    activationKey: json["activationKey"],
+    deviceModelName: json["deviceModelName"],
+    deviceModelVersion: json["deviceModelVersion"]
+  );
+
+  Map<String, dynamic> toMap() => {
+    "taxPayerId": companyID,
+    "taxPayerName": taxPayerName,
+    "taxPayerTin": taxPayerTin,
+    "taxPayerVatNumber": taxPayerVat,
+    "taxPayerAddress": taxPayerAddress,
+    "taxPayerEmail": email,
+    "taxPayerPhone": phoneNumber,
+    "taxPayerWebsite": website,
+    "deviceID": deviceId,
+    "activationKey": activationKey,
+    "deviceModelName": deviceModelName,
+    "deviceModelVersion": deviceModelVersion,
+  };
+}
+
 ///CustomerDetailsModel//////
 ///////////////////////////////////////////////////////
 OpenDay openDayMethodFromMap(String str) => OpenDay.fromMap(json.decode(str));

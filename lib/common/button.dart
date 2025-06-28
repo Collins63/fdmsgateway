@@ -2,7 +2,7 @@ import 'package:fdmsgateway/common/reusableText.dart';
 import 'package:flutter/material.dart';
 
 class CustomOutlineBtn extends StatelessWidget {
-  const CustomOutlineBtn({super.key, this.width, this.height, required this.text, this.onTap, required this.color, this.color2});
+  const CustomOutlineBtn({super.key, this.width, this.height, required this.text, this.onTap, required this.color, this.color2, required this.icon});
 
   final double? width;
   final double? height;
@@ -10,6 +10,7 @@ class CustomOutlineBtn extends StatelessWidget {
   final void Function()? onTap;
   final Color color;
   final Color? color2;
+  final Icon icon;
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +28,17 @@ class CustomOutlineBtn extends StatelessWidget {
           )
         ),
         child: Center(
-          child: ReusableText(text: text,
-           style: const TextStyle(fontSize:16 ,color: Colors.white,fontWeight:  FontWeight.w600)),
+          child: Row(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: icon
+              ),
+              const SizedBox(width: 20),
+              ReusableText(text: text,
+               style: const TextStyle(fontSize:16 ,color: Colors.white,fontWeight:  FontWeight.w600),),
+            ],
+          ),
         ),
       ),
     );

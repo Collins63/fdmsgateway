@@ -1,3 +1,4 @@
+
 import 'package:fdmsgateway/common/button.dart';
 import 'package:fdmsgateway/database.dart';
 import 'package:fdmsgateway/models/jsonModels.dart';
@@ -70,6 +71,394 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
     activationKey.clear();
     deviceModelName.clear();
     deviceModelVErsion.clear();
+  }
+
+
+  showUpdatePrompt(){
+    final TextEditingController updateTaxPayerName = TextEditingController();
+    final TextEditingController updateTaxPayerTin = TextEditingController();
+    final TextEditingController updateTaxPayerVat = TextEditingController();
+    final TextEditingController updateTaxPayerAddress = TextEditingController();
+    final TextEditingController updateEmail = TextEditingController();
+
+    final TextEditingController updatePhonenumber = TextEditingController();
+    final TextEditingController updateWebsite = TextEditingController();
+    final TextEditingController updateDeviceId = TextEditingController();
+    final TextEditingController updateActivationkey = TextEditingController();
+    final TextEditingController updateModelname = TextEditingController();
+    final TextEditingController updateVersion = TextEditingController();
+
+    int taxPayerID = taxPayerDetails[0]['taxPayerId'];
+  
+    updateTaxPayerName.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerName'].toString() : '';
+    updateTaxPayerTin.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerTin'].toString() : '';
+    updateTaxPayerVat.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerVatNumber'].toString() : '';
+    updateTaxPayerAddress.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerAddress'].toString() : '';
+    updateEmail.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerEmail'].toString() : '';
+    updatePhonenumber.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerPhone'].toString() : '';
+    updateWebsite.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['taxPayerWebsite'].toString() : '';
+    updateDeviceId.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['deviceID'].toString() : '';
+    updateActivationkey.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['activationKey'].toString() : '';
+    updateModelname.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['deviceModelName'].toString() : '';
+    updateVersion.text = taxPayerDetails.isNotEmpty ? taxPayerDetails[0]['deviceModelVersion'].toString() : '';
+
+
+    return showDialog(
+    barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: SizedBox(
+            width: 1000,
+            height: 800,
+            child: Form(
+              key: saveCompanyDetailsKey,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Container(
+                        height: 5,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(20), 
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                          controller: updateTaxPayerName  ,
+                          decoration: InputDecoration(
+                              labelText: 'Trade Name',
+                              labelStyle: TextStyle(color:Colors.grey.shade600 ),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  borderSide: BorderSide.none
+                              )
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                          validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                                                ),
+                        ),
+                      // Password Field
+                        const SizedBox(width: 10,),
+                        Expanded(
+                          child: TextFormField(
+                            controller: updateTaxPayerTin,
+                            decoration: InputDecoration(
+                              labelText: 'TIN Number',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                          controller: updateTaxPayerVat,
+                          decoration: InputDecoration(
+                            labelText: 'VAT Number',
+                            labelStyle:  TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                          validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                                                ),
+                        ),
+                        const SizedBox(width: 10,),
+                        Expanded(
+                          child: TextFormField(
+                            controller:updateTaxPayerAddress,
+                            decoration: InputDecoration(
+                              labelText: 'Full Address',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                          controller: updateEmail,
+                          decoration: InputDecoration(
+                            labelText: 'Email Address',
+                            labelStyle:  TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                          validator: (value){
+                            if(value!.isEmpty){
+                              return "Required";
+                            }return null;
+                          },
+                                                ),
+                        ),
+                        const SizedBox(width: 10,),
+                        Expanded(
+                          child: TextFormField(
+                            controller: updatePhonenumber,
+                            decoration: InputDecoration(
+                              labelText: 'Phone Number',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                          controller:updateWebsite,
+                          decoration: InputDecoration(
+                            labelText: 'Website',
+                            labelStyle:  TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                                                ),
+                        ),
+                        const SizedBox(width: 10,),
+                        Expanded(
+                          child: TextFormField(
+                            controller: updateDeviceId,
+                            decoration: InputDecoration(
+                              labelText: 'ZIMRA Device ID',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            validator: (value){
+                              if(value!.isEmpty){
+                                return "Required";
+                              }return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller:updateActivationkey,
+                            decoration: InputDecoration(
+                              labelText: 'Activation Key',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            
+                          ),
+                        ),
+                        const SizedBox(width: 10,),
+                        Expanded(
+                          child: TextFormField(
+                            controller: updateModelname,
+                            decoration: InputDecoration(
+                              labelText: 'Device Model Name',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10,),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: updateVersion,
+                            decoration: InputDecoration(
+                              labelText: 'Device Model Version',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                        const SizedBox(width: 10,),
+                      ],
+                    ),
+                      const SizedBox(height: 10,),
+                      // Signup Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (saveCompanyDetailsKey.currentState!.validate()) {
+                              try {
+                                await dbHelper.updateTaxpayer(taxPayerID ,updateTaxPayerName.text , updateTaxPayerTin.text , updateTaxPayerVat.text , updateTaxPayerAddress.text , updateEmail.text,
+                                updatePhonenumber.text , updateWebsite.text , updateDeviceId.text , updateActivationkey.text , updateModelname.text , updateVersion.text);
+                                // Navigate to the HomePage after successful product addition
+                                clearFields();
+                                Navigator.pop(context);
+                                 Get.snackbar(
+                                  "Success",
+                                  "Details updated successfully",
+                                  icon:const Icon(Icons.check),
+                                  colorText: Colors.white,
+                                  backgroundColor: Colors.green,
+                                  snackPosition: SnackPosition.TOP
+                                );
+                                fetchTaxPayerDetails();
+                                } catch (e) {
+                                  Get.snackbar(
+                                    "Error",
+                                    "Error adding details: $e",
+                                    icon:const Icon(Icons.error),
+                                    colorText: Colors.white,
+                                    backgroundColor: Colors.red,
+                                    snackPosition: SnackPosition.TOP
+                                  );
+                                }
+                            }
+//25792
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding:const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          child: const Text(
+                            'Save Company Details',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      
+                      ),const SizedBox(height: 10,),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: (){
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding:const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          child: const Text(
+                            "Close Form",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          )
+                        ),
+                      ),
+                      const SizedBox(height: 20,)  
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   //show create dialog
@@ -535,7 +924,9 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                                                       children: [
                                                         IconButton(
                                                           icon: const Icon(Icons.edit, color: Colors.blue),
-                                                          onPressed: () {},
+                                                          onPressed: () {
+                                                            showUpdatePrompt();
+                                                          },
                                                         ),
                                                         IconButton(
                                                           icon: const Icon(Icons.credit_card_outlined, color: Colors.blue),
@@ -564,60 +955,24 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                   ),
                 )
             ),
-            SizedBox(height: 30,),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CustomOutlineBtn(
-                    icon: const Icon(Icons.add, color: Colors.white,),
-                    height: 40,
-                    width: 250,
-                    text: "Create",
-                    color: Colors.green,
-                    color2: Colors.green,
-                    onTap: () {
-                      showAddDialog();
-                    },
-                  ),
-                  const SizedBox(width: 10,),
-                  CustomOutlineBtn(
-                    icon: const Icon(Icons.edit, color: Colors.white,),
-                    width: 250,
-                    text: "Edit",
-                    color: Colors.blue,
-                    color2: Colors.blue,
-                    height: 40,
-                    onTap: (){
-              
-                    },
-                  ),
-                  CustomOutlineBtn(
-                    icon: const Icon(Icons.remove_red_eye, color: Colors.white,),
-                    width: 250,
-                    text: "View",
-                    color: Colors.blue,
-                    color2: Colors.blue,
-                    height: 40,
-                    onTap: (){
-              
-                    },
-                  ),
-                  CustomOutlineBtn(
-                    icon: Icon(Icons.delete, color: Colors.white,),
-                    width: 250,
-                    text: "Delete",
-                    color: Colors.red,
-                    color2: Colors.red,
-                    height: 40,
-                    onTap: (){
-              
-                    },
-                  )
-                ],
+            SizedBox(height: 30,),  
+            taxPayerDetails.isEmpty ?
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CustomOutlineBtn(
+                  height: 45,
+                  width: 300,
+                  text: "Create",
+                  color: Colors.green,
+                  color2: Colors.green,
+                  icon:const Icon(Icons.add, color: Colors.white,),
+                  onTap: () {
+                    showAddDialog();
+                  },
+                ),
               ),
-            )
+            ) :const SizedBox(height: 2,),
         ],
       ),
     );

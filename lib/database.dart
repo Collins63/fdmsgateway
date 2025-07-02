@@ -170,6 +170,29 @@ Future<Database> initDB() async {
     );
   }
 
+      Future<void> updateTaxpayer(int taxpayerid, String name, String tin , String vat , String address,
+      String email, String phone , String website, String deviceID , String activationKey , String modelName, String modelVersion) async{
+      final db = await initDB();
+      await db.update(
+        'taxPayerDetails',
+        {
+          'taxPayerName': name,
+          'taxPayerTin': tin,
+          'taxPayerVatNumber': vat,
+          'taxPayerAddress': address,
+          'taxPayerEmail': email,
+          'taxPayerPhone': phone,
+          'taxPayerWebsite':website,
+          'deviceID':deviceID,
+          'activationKey':activationKey,
+          'deviceModelName':modelName,
+          'deviceModelVersion':modelVersion,
+        },
+        where: 'taxPayerId = ?',
+        whereArgs: [taxpayerid]
+      );
+    }
+
   //search for products
   Future<List<Map<String, dynamic>>> searchProducts(String query) async {
     final Database db = await initDB();
@@ -721,7 +744,7 @@ Future<Database> initDB() async {
       ''', [dayNo]);
   }
 
-  Future<List<Map<String , dynamic>>> getReceiptSubmittedById(int invoiceNum) async{
+  Future<List<Map<String , dynamic>>> getReceiptSubmittedById(String invoiceNum) async{
     final db = await initDB();
     return await db.rawQuery('''
       SELECT submittedReceipts.*

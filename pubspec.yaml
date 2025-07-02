@@ -49,6 +49,7 @@ dependencies:
   pointycastle: ^4.0.0
   asn1lib: ^1.6.5
   crypto: ^3.0.6
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:

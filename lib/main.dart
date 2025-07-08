@@ -78,7 +78,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final Directory inputFolder = Directory(r'C:\Fiscal\Input');
   final Directory signedFolder = Directory(r'C:\Fiscal\Signed');
   DatabaseHelper dbHelper =  DatabaseHelper();
-
   StreamSubscription<WatchEvent>? inputSub;
   StreamSubscription<WatchEvent>? signedSub;
   final List<String> logs = [];
@@ -93,14 +92,12 @@ class _MyHomePageState extends State<MyHomePage> {
   int currentFiscal = 0;
   String? transactionCurrency; 
   String? dateForCreditNote;
-
   double totalAmount = 0.0; 
   double taxAmount = 0.0;
   String? generatedJson;
   String? fiscalResponse;
   double taxPercent = 0.0 ;
   String? taxCode;
-
   String? encodedSignature;
   String? encodedHash;
   String? signature64 ;
@@ -185,56 +182,56 @@ class _MyHomePageState extends State<MyHomePage> {
 
   ///MANUAL OPENDAY
   Future<String> openDayManual() async {
-  final dbHelper = DatabaseHelper();
-  final previousData = await dbHelper.getPreviousReceiptData();
-  final previousFiscalDayNo = await dbHelper.getPreviousFiscalDayNo();
-  final taxIDSetting = await getConfig();
+    final dbHelper = DatabaseHelper();
+    final previousData = await dbHelper.getPreviousReceiptData();
+    final previousFiscalDayNo = await dbHelper.getPreviousFiscalDayNo();
+    final taxIDSetting = await getConfig();
 
-  int fiscalDayNo = (previousData["receiptCounter"] == 0 &&
-          previousData["receiptGlobalNo"] == 0)
-      ? 1
-      : previousFiscalDayNo + 1;
+    int fiscalDayNo = (previousData["receiptCounter"] == 0 &&
+            previousData["receiptGlobalNo"] == 0)
+        ? 1
+        : previousFiscalDayNo + 1;
 
-  String iso8601 = DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
+    String iso8601 = DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
 
-  String openDayRequest = jsonEncode({
-    "fiscalDayNo": fiscalDayNo,
-    "fiscalDayOpened": iso8601,
-    "taxID": taxIDSetting,
-  });
+    String openDayRequest = jsonEncode({
+      "fiscalDayNo": fiscalDayNo,
+      "fiscalDayOpened": iso8601,
+      "taxID": taxIDSetting,
+    });
 
-  print("Open Day Request JSON: $openDayRequest");
+    print("Open Day Request JSON: $openDayRequest");
 
-  SSLContextProvider sslContextProvider = SSLContextProvider();
-  SecurityContext securityContext = await sslContextProvider.createSSLContext();
-  final client = HttpClient(context: securityContext)
-  ..badCertificateCallback = (cert , host , port) => true;
+    SSLContextProvider sslContextProvider = SSLContextProvider();
+    SecurityContext securityContext = await sslContextProvider.createSSLContext();
+    final client = HttpClient(context: securityContext)
+    ..badCertificateCallback = (cert , host , port) => true;
 
-  final ioClient = IOClient(client);
+    final ioClient = IOClient(client);
 
-  try {
-    final response = await ioClient.post(
-      Uri.parse("https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/OpenDay"), // Update this URL
-      headers: {
-        "Content-Type": "application/json",
-        "DeviceModelName": "Server",
-        "DeviceModelVersion": "v1"
-      },
-      body: openDayRequest,
-    );
-    if (response.statusCode == 200) {
-      print("Open Day posted successfully!");
-      await dbHelper.insertOpenDay(fiscalDayNo, "unprocessed", iso8601);
-      return "Open Day Successfully Recorded!";
-    } else {
-      print("Failed to post Open Day: ${response.body}");
-      return "Failed to post Open Day";
+    try {
+      final response = await ioClient.post(
+        Uri.parse("https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/OpenDay"), // Update this URL
+        headers: {
+          "Content-Type": "application/json",
+          "DeviceModelName": "Server",
+          "DeviceModelVersion": "v1"
+        },
+        body: openDayRequest,
+      );
+      if (response.statusCode == 200) {
+        print("Open Day posted successfully!");
+        await dbHelper.insertOpenDay(fiscalDayNo, "unprocessed", iso8601);
+        return "Open Day Successfully Recorded!";
+      } else {
+        print("Failed to post Open Day: ${response.body}");
+        return "Failed to post Open Day";
+      }
+    } catch (e) {
+      print("Error sending request: $e");
+      return "Connection error";
     }
-  } catch (e) {
-    print("Error sending request: $e");
-    return "Connection error";
   }
-}
 
 Future<String> getConfig() async {
   String apiEndpointGetConfig = "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/GetConfig"; // Replace with actual API endpoint
@@ -368,8 +365,6 @@ Future<String> getConfig() async {
 
   return responseMessage;
 }
-
-
   ///GETSTATUS
   
   Future<void> getStatus() async {
@@ -396,36 +391,33 @@ Future<String> getConfig() async {
       icon: const Icon(Icons.message, color: Colors.white),
     );
   }
-
-
-
   Future<String> ping() async {
-  String apiEndpointPing =
-      "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/Ping";
-  const String deviceModelName = "Server";
-  const String deviceModelVersion = "v1"; 
+    String apiEndpointPing =
+        "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/Ping";
+    const String deviceModelName = "Server";
+    const String deviceModelVersion = "v1"; 
 
-  SSLContextProvider sslContextProvider = SSLContextProvider();
-  SecurityContext securityContext = await sslContextProvider.createSSLContext();
+    SSLContextProvider sslContextProvider = SSLContextProvider();
+    SecurityContext securityContext = await sslContextProvider.createSSLContext();
 
-  // Call the Ping function
-  final String response = await PingService.ping(
-    apiEndpointPing: apiEndpointPing,
-    deviceModelName: deviceModelName,
-    deviceModelVersion: deviceModelVersion,
-    securityContext: securityContext,
-  );
-
-  //print("Response: \n$response");
-  Get.snackbar(
-      "Zimra Response", "$response",
-      snackPosition: SnackPosition.TOP,
-      colorText: Colors.white,
-      backgroundColor: Colors.green,
-      icon: const Icon(Icons.message, color: Colors.white),
+    // Call the Ping function
+    final String response = await PingService.ping(
+      apiEndpointPing: apiEndpointPing,
+      deviceModelName: deviceModelName,
+      deviceModelVersion: deviceModelVersion,
+      securityContext: securityContext,
     );
-  return response;
-}
+
+    //print("Response: \n$response");
+    Get.snackbar(
+        "Zimra Response", "$response",
+        snackPosition: SnackPosition.TOP,
+        colorText: Colors.white,
+        backgroundColor: Colors.green,
+        icon: const Icon(Icons.message, color: Colors.white),
+      );
+    return response;
+  }
   Future<String> submitUnsubmittedReceipts(DatabaseHelper dbHelper) async {
   String sql = "SELECT * FROM submittedReceipts WHERE StatustoFDMS = 'NotSubmitted'";
   int resubmittedCount = 0;
@@ -525,13 +517,13 @@ Future<String> getConfig() async {
   return "Failed to ping the server. Check your connection!";
 
 }
-Future<int> getlatestFiscalDay() async {
-  int latestFiscDay = await dbHelper.getlatestFiscalDay();
-  setState(() {
-    currentFiscal = latestFiscDay;
-  });
-  return latestFiscDay;
-}
+  Future<int> getlatestFiscalDay() async {
+    int latestFiscDay = await dbHelper.getlatestFiscalDay();
+    setState(() {
+      currentFiscal = latestFiscDay;
+    });
+    return latestFiscDay;
+  }
 
   
   ///==================================END FDMS FUNCTIONS========================================
@@ -1128,7 +1120,7 @@ Future<int> getlatestFiscalDay() async {
                   'customerTIN': customerDetails['tin'],
                   //'customerAddress': customerDetails['address'] ?? 'Unknown',
                   'customerPhone': customerDetails['phone'],
-                  'customerEmail': customerDetails['email'],
+                  'customerEmail': customerDetails['email'] != "null" ? customerDetails['email'] : 'noemail@email.com',
                   'houseNO' : buyerAddress['houseNo'],
                   'street': buyerAddress['street'],
                   'province': buyerAddress['province'],
@@ -1928,8 +1920,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     return "$deviceID$receiptType$receiptCurrency$receiptGlobalNo$receiptDate$receiptTotal_adj$receiptTaxes$getPreviousReceiptHash";
   }
   
-  
-
   //use raw string
   useRawString(String date) async {
     int latestFiscDay = await dbHelper.getlatestFiscalDay();
@@ -2088,10 +2078,8 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     print(hash);
     return hash;
   }
-  
-  
+   
   //generate fiscal JSON
-
   Future<String> generateFiscalJSON() async {
     String encodedreceiptDeviceSignature_signature;
   try {
@@ -2252,7 +2240,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
   }
 }
 
-
 //print invoice
 Future<void> generateInvoiceFromJson(Map<String , dynamic> receiptJson , String qrUrl) async{
     final receipt = receiptJson['receipt'];
@@ -2375,7 +2362,6 @@ Future<void> generateInvoiceFromJson(Map<String , dynamic> receiptJson , String 
       print('Error saving invoice: $e');
     }
   }
-
 
 //submit receipts
 Future<void> submitReceipt() async {

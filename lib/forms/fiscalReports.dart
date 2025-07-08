@@ -15,6 +15,10 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
   String? selectedCurrency;
   List<String> currencies = ['ZWG' , 'USD' , 'ZAR'];
   double? periodTotal;
+  double? periodTaxTotal;
+  double? periodTotal15;
+  double? periodTotalZero;
+  double? periodTotalNonVAT;
   DatabaseHelper dbHelper = DatabaseHelper();
 
   Future<void> selectedStartDate(BuildContext context) async{
@@ -27,6 +31,10 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
       setState(() {
         _startDate = picked;
       });
+      await updateTaxTotal();
+      await updateTotalNonVATSales();
+      await updateTotalVATSales();
+      await updateTotalZeroVATSales();
     }
   }
 
@@ -41,8 +49,71 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
       setState(() {
         _endDate = picked;
       });
+      await updateTaxTotal();
     }
   }
+
+  
+  Future<void> updateTotalVATSales() async {
+    if (_startDate != null && _endDate != null && selectedCurrency != null) {
+      final total = await dbHelper.getTotal15WithinDateRange(
+        currency: selectedCurrency!,
+        startDate: _startDate!.toIso8601String(),
+        endDate: _endDate!
+            .add(const Duration(hours: 23, minutes: 59, seconds: 59))
+            .toIso8601String(),
+      );
+      setState(() {
+        periodTotal15 = total;
+      });
+    }
+  }
+
+  Future<void> updateTotalNonVATSales() async {
+    if (_startDate != null && _endDate != null && selectedCurrency != null) {
+      final total = await dbHelper.getTotalNonVatWithinDateRange(
+        currency: selectedCurrency!,
+        startDate: _startDate!.toIso8601String(),
+        endDate: _endDate!
+            .add(const Duration(hours: 23, minutes: 59, seconds: 59))
+            .toIso8601String(),
+      );
+      setState(() {
+        periodTotalNonVAT = total;
+      });
+    }
+  }
+
+  Future<void> updateTotalZeroVATSales() async {
+    if (_startDate != null && _endDate != null && selectedCurrency != null) {
+      final total = await dbHelper.getTotalNonVatWithinDateRange(
+        currency: selectedCurrency!,
+        startDate: _startDate!.toIso8601String(),
+        endDate: _endDate!
+            .add(const Duration(hours: 23, minutes: 59, seconds: 59))
+            .toIso8601String(),
+      );
+      setState(() {
+        periodTotalZero = total;
+      });
+    }
+  }
+
+  Future<void> updateTaxTotal() async {
+    if (_startDate != null && _endDate != null && selectedCurrency != null) {
+      final total = await dbHelper.getTotalTaxWithinDateRange(
+        currency: selectedCurrency!,
+        startDate: _startDate!.toIso8601String(),
+        endDate: _endDate!
+            .add(const Duration(hours: 23, minutes: 59, seconds: 59))
+            .toIso8601String(),
+      );
+      setState(() {
+        periodTaxTotal = total;
+      });
+    }
+  }
+
 
   // Future<List<String>> fetchCurrencies() async{
   //   final List<Map<String, dynamic>> currencies = await dbHelper.getAllCurrencies();
@@ -149,14 +220,7 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
                           setState(() {
                             selectedCurrency = value;
                           });
-                          final total = await dbHelper.getTotalSalesWithinDateRange(
-                            currency: selectedCurrency.toString(),
-                            startDate: _startDate!.toIso8601String(),
-                            endDate: _endDate!.add(const Duration(hours: 23 , minutes: 59 , seconds: 59)).toIso8601String(),
-                          );
-                          setState(() {
-                            periodTotal = total;
-                          });
+                          await updateTaxTotal();
                         },
                         items: currencies.map((currency) {
                           return DropdownMenuItem<String>(
@@ -223,7 +287,7 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
                                       Icons.attach_money_rounded, size: 40,
                                     ),
                                     const SizedBox(height: 10,),
-                                    const Text("\$0.00" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
+                                    Text("\$${periodTaxTotal?.toStringAsFixed(2)}" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
                                   ],
                                 ),
                               ),
@@ -244,7 +308,7 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
                                       Icons.attach_money_rounded, size: 40,
                                     ),
                                     const SizedBox(height: 10,),
-                                    const Text("\$0.00" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
+                                    Text("\$${periodTotal15?.toStringAsFixed(2)}" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
                                   ],
                                 ),
                               )
@@ -265,13 +329,13 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 20,),
-                                    const Text("Total Non VAT" , style: TextStyle(fontWeight: FontWeight.w600),),
+                                    const Text("Total Zero VAT" , style: TextStyle(fontWeight: FontWeight.w600),),
                                     const SizedBox(height: 10,),
                                     Icon(
                                       Icons.attach_money_rounded, size: 40,
                                     ),
                                     const SizedBox(height: 10,),
-                                    const Text("\$0.00" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
+                                    Text("\$${periodTotalZero?.toStringAsFixed(2)}" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
                                   ],
                                 ),
                               ),
@@ -292,7 +356,7 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
                                       Icons.attach_money_rounded, size: 40,
                                     ),
                                     const SizedBox(height: 10,),
-                                    const Text("\$0.00" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
+                                    Text("\$${periodTotalNonVAT?.toStringAsFixed(2)}" , style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),),
                                   ],
                                 ),
                               )

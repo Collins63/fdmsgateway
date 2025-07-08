@@ -847,7 +847,7 @@ Future<void> clearAllData() async {
     ''');
   }
 
-    Future<double> getTotalSalesWithinDateRange({
+  Future<double> getTotalSalesWithinDateRange({
     required String currency,
     required String startDate,
     required String endDate,
@@ -865,6 +865,104 @@ Future<void> clearAllData() async {
     ''', [currency, startDate, endDate]);
 
     return result.isNotEmpty ? (result[0]['totalSales'] as double) : 0.0;
+  }
+
+  Future<double> getTotalTaxWithinDateRange({
+    required String currency,
+    required String startDate,
+    required String endDate,
+  }) async {
+  final db = await initDB();
+
+  print(currency);
+  print(startDate);
+  print(endDate);
+
+  final result = await db.rawQuery('''
+      SELECT 
+        IFNULL(SUM(submittedReceipts.taxAmount), 0) AS totalTax
+      FROM 
+        submittedReceipts
+      WHERE 
+        submittedReceipts.receiptCurrency = ? 
+        AND submittedReceipts.receiptDate BETWEEN ? AND ?
+    ''', [currency, startDate, endDate]);
+
+    return result.isNotEmpty ? (result[0]['totalTax'] as num).toDouble() : 0.0;
+  }
+
+  // Total15VAT TEXT , TotalNonVAT REAL , TotalExempt REAL
+
+  Future<double> getTotal15WithinDateRange({
+    required String currency,
+    required String startDate,
+    required String endDate,
+  }) async {
+  final db = await initDB();
+
+  print(currency);
+  print(startDate);
+  print(endDate);
+
+  final result = await db.rawQuery('''
+      SELECT 
+        IFNULL(SUM(submittedReceipts.Total15VAT), 0) AS total
+      FROM 
+        submittedReceipts
+      WHERE 
+        submittedReceipts.receiptCurrency = ? 
+        AND submittedReceipts.receiptDate BETWEEN ? AND ?
+    ''', [currency, startDate, endDate]);
+
+    return result.isNotEmpty ? (result[0]['total'] as num).toDouble() : 0.0;
+  }
+
+  Future<double> getTotalNonVatWithinDateRange({
+    required String currency,
+    required String startDate,
+    required String endDate,
+  }) async {
+  final db = await initDB();
+
+  print(currency);
+  print(startDate);
+  print(endDate);
+
+  final result = await db.rawQuery('''
+      SELECT 
+        IFNULL(SUM(submittedReceipts.TotalExempt), 0) AS total
+      FROM 
+        submittedReceipts
+      WHERE 
+        submittedReceipts.receiptCurrency = ? 
+        AND submittedReceipts.receiptDate BETWEEN ? AND ?
+    ''', [currency, startDate, endDate]);
+
+    return result.isNotEmpty ? (result[0]['total'] as num).toDouble() : 0.0;
+  }
+
+  Future<double> getTotalZeroVatWithinDateRange({
+    required String currency,
+    required String startDate,
+    required String endDate,
+  }) async {
+  final db = await initDB();
+
+  print(currency);
+  print(startDate);
+  print(endDate);
+
+  final result = await db.rawQuery('''
+      SELECT 
+        IFNULL(SUM(submittedReceipts.TotalNonVAT), 0) AS total
+      FROM 
+        submittedReceipts
+      WHERE 
+        submittedReceipts.receiptCurrency = ? 
+        AND submittedReceipts.receiptDate BETWEEN ? AND ?
+    ''', [currency, startDate, endDate]);
+
+    return result.isNotEmpty ? (result[0]['total'] as num).toDouble() : 0.0;
   }
   
 }

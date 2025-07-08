@@ -1,9 +1,13 @@
 
+import 'dart:io';
+
 import 'package:fdmsgateway/common/button.dart';
 import 'package:fdmsgateway/database.dart';
 import 'package:fdmsgateway/models/jsonModels.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CompanydetailsPage extends StatefulWidget {
   const CompanydetailsPage({super.key});
@@ -47,6 +51,35 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
     });
   }
 
+  //get logo file
+  Future<File> getLogoFile()async{
+    final appDir = await getApplicationDocumentsDirectory();
+    final logoPath = File('${appDir.path}/company_logo.png');
+    return logoPath;
+  }
+
+  //File picker
+  Future<void> pickAndSaveLogo() async{
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true
+    );
+    if(result != null && result.files.single.bytes != null){
+      final file = await getLogoFile();
+      await file.writeAsBytes(result.files.single.bytes!);
+      print("logo saved to: ${file.path}");
+    }
+  }
+
+  //delete logo
+  Future<void> deleteLogo() async {
+  final file = await getLogoFile();
+  if (await file.exists()) {
+    await file.delete();
+    print("🗑️ Logo deleted");
+  }
+}
+
   TextEditingController taxPayerName = TextEditingController();
   TextEditingController taxPayerTin = TextEditingController();
   TextEditingController taxPayerVat = TextEditingController();
@@ -80,7 +113,6 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
     final TextEditingController updateTaxPayerVat = TextEditingController();
     final TextEditingController updateTaxPayerAddress = TextEditingController();
     final TextEditingController updateEmail = TextEditingController();
-
     final TextEditingController updatePhonenumber = TextEditingController();
     final TextEditingController updateWebsite = TextEditingController();
     final TextEditingController updateDeviceId = TextEditingController();

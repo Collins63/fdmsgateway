@@ -50,6 +50,10 @@ dependencies:
   asn1lib: ^1.6.5
   crypto: ^3.0.6
   printing: ^5.14.2
+  path_provider: ^2.1.5
+  image_picker: ^1.1.2
+  shared_preferences: ^2.5.3
+  file_picker: ^10.2.0
 
 dev_dependencies:
   flutter_test:

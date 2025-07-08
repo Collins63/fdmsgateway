@@ -69,18 +69,28 @@ Future<Database> initDB() async {
         await db.execute(openDay);
         await db.execute(submittedReceipts);
         await db.execute(creditNotes);
-        await db.execute(taxPayerDetails); 
+        await db.execute(taxPayerDetails);
+        // clearAllData(db);
       },
-      // onUpgrade: (db, oldVersion, newVersion) async {
-      //   if (oldVersion < 2) {
-      //     await db.execute('''CREATE TABLE IF NOT EXISTS credit_notes (...)''');
-      //   }
-      //   if (oldVersion < 3) {
-      //     await db.execute('ALTER TABLE invoices ADD COLUMN cancelled INTEGER NOT NULL DEFAULT 0');
-      //   }
-      // },
     ),
   );
+}
+
+
+Future<void> clearAllData() async {
+  final Database db = await initDB();
+  await db.execute('DELETE FROM users');
+  await db.execute('DELETE FROM products');
+  await db.execute('DELETE FROM invoices');
+  await db.execute('DELETE FROM sales');
+  await db.execute('DELETE FROM customer');
+  await db.execute('DELETE FROM stockPurchases');
+  await db.execute('DELETE FROM companyDetails');
+  await db.execute('DELETE FROM paymentMethods');
+  await db.execute('DELETE FROM openDay');
+  await db.execute('DELETE FROM submittedReceipts');
+  await db.execute('DELETE FROM credit_notes');
+  await db.execute('DELETE FROM taxPayerDetails');
 }
 
 
@@ -827,6 +837,34 @@ Future<Database> initDB() async {
       SELECT taxPayerDetails.*
       FROM taxPayerDetails
     ''');
+  }
+
+  Future<List<Map<String , dynamic>>> getAllCurrencies() async{
+    final db = await initDB();
+    return await db.rawQuery('''
+      SELECT receiptCurrency as currency
+      FROM submittedReceipts
+    ''');
+  }
+
+    Future<double> getTotalSalesWithinDateRange({
+    required String currency,
+    required String startDate,
+    required String endDate,
+  }) async {
+  final db = await initDB();
+
+  final result = await db.rawQuery('''
+      SELECT 
+        IFNULL(SUM(invoices.totalAmount), 0) AS totalSales
+      FROM 
+        invoices
+      WHERE 
+        invoices.currency = ? 
+        AND invoices.date BETWEEN ? AND ?
+    ''', [currency, startDate, endDate]);
+
+    return result.isNotEmpty ? (result[0]['totalSales'] as double) : 0.0;
   }
   
 }

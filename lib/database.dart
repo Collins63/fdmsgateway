@@ -847,6 +847,38 @@ Future<void> clearAllData() async {
     ''');
   }
 
+  Future<List<Map<String, dynamic>>> getZReportTotals(int dayNo , String currency) async{
+    final db = await initDB();
+    return await db.rawQuery('''
+      SELECT
+        SUM(receiptTotal) sumZWGReceiptTotal,
+        SUM(taxAmount) as sumZWGTaxAmount,
+        SUM(Total15VAT) as sumZWG15VAT,
+        SUM(TotalNonVAT) as sumZWGNonVAT,
+        SUM(TotalExempt) as sumZWGExempt
+      FROM submittedReceipts
+      WHERE FiscalDayNo = ?  AND receiptCurrency = ?
+      ''' , [dayNo , currency]);
+  }
+
+  Future<List<Map<String , dynamic>>> getZreportDocumentTotals(int dayNo , String receiptType,  String currency) async {
+    final db = await initDB();
+    return await db.rawQuery('''
+      SELECT SUM(receiptTotal) as total
+      FROM submittedReceipts
+      WHERE FiscalDayNo = ?  AND receiptCurrency = ? AND receiptType = ?
+    ''' , [dayNo , currency , receiptType]);
+  }
+
+  Future<List<Map<String, dynamic>>> getDocumentsCounter(int dayNo , String currency , String receiptType) async{
+    final db = await initDB();
+    return await db.rawQuery('''
+      SELECT COUNT(*) as count
+      FROM submittedReceipts
+      WHERE FiscalDayNo = ?  AND receiptCurrency = ? AND receiptType = ?
+    ''', [dayNo , currency , receiptType]);
+  }
+
   Future<double> getTotalSalesWithinDateRange({
     required String currency,
     required String startDate,

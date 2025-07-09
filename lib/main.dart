@@ -565,433 +565,1180 @@ Future<String> getConfig() async {
     }
   }
 
-  Future<void> print80mmReceipt({
-  required Map<String, dynamic> receipt,
-  required String qrUrl,
-  required String qrData,
-  Printer? selectedPrinter, // Optional silent print
-}) async {
-  final pdf = pw.Document();
+  Future<void> handleZReportPrint() async{
+    try {
+      final printers = await Printing.listPrinters();
+      final selectedPrinter = printers.firstWhere((p) => p.name.contains("XP-80C"));
+      await print80mmZReport(
+        selectedPrinter: selectedPrinter
+      ); 
+    } catch (e) {
+      Get.snackbar(
+        "Z Report Print Eror",
+        "$e",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error)
+      );
+    }
+  }
 
-  String formattedQrData = formatString(qrData);   
-  pdf.addPage(
-    pw.Page(
-      pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity),
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "$tradeName",
-              style: pw.TextStyle(fontSize:10, fontWeight: pw.FontWeight.bold),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "TIN: $taxPayerTIN",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.SizedBox(height: 3),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "VAT No: $taxPayerVatNumber",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.SizedBox(height: 3),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "$taxPayerAddress",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.SizedBox(height: 3),
-            pw.Container(
-              alignment: pw.Alignment.center,
-                child: pw.Text(
-                "$taxPayerEmail",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-            ),
-            pw.SizedBox(height: 3),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.SizedBox(
-              child: pw.Text(
-              "$taxPayerPhone",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            ),
-            pw.Divider(),
-            isReceiptCreditNote == 1 ?
-              pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-                "FISCAL CREDIT NOTE",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
-                textAlign: pw.TextAlign.center,
-              ),
-            ): 
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-                "FISCAL TAX INVOICE",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
-                textAlign: pw.TextAlign.center,
-              ),
-            ),
-            pw.Divider(),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "Buyer",
-              style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "${receipt['buyerData']?['buyerTradeName'] ?? 'Walk-in Customer'}",
-              style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "TIN: ${receipt['buyerData']?['buyerTIN'] ?? 'N/A'}",
-              style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "VAT: ${receipt['buyerData']?['VATNumber'] ?? 'N/A'}",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "${receipt['buyerData']?['buyerContactS']['email'] ?? 'N/A'}",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "${receipt['buyerData']?['buyerContactS']['phoneNo'] ?? 'N/A'}",
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Divider(),
-            pw.Text("Date: ${receipt['receiptDate'] ?? ''}",style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)),
-            pw.Text("Currency: ${receipt['receiptCurrency'] ?? ''}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
-            isReceiptCreditNote == 1 ?
-            pw.Text("CreditNote No: ${receipt['invoiceNo'] ?? '#########'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-            pw.Text("Invoice No: ${receipt['invoiceNo'] ?? '#########'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
-            isReceiptCreditNote == 1 ? 
-              pw.Text("Credit Reason: ${receipt['receiptNotes'] ?? 'No reason provided'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-              pw.SizedBox.shrink(),
-            pw.Divider(),
-            isReceiptCreditNote == 1 ?
+  double GrossTotalZWG = 0;
+    double TaxTotalZWG = 0;
+    double NetVAT15TotalZWG = 0;
+    double NetNonVATTotalZWG = 0;
+    double NetExemptTotalZWG = 0;
+    double NetTotalZWG = 0;
+    double TaxVAT15ZWG = 0;
+    double getGrossTotalVAT15ZWG = 0;
+    double getGrossTotalNonVATZWG =0;
+    double getGrossTotalExemptZWG = 0;
+    double GrossTotalVAT15ZWG = 0;
+    double GrossTotalNonVATZWG = 0;
+    double GrossTotalExemptZWG = 0;
+    double getTotalTaxAmount = 0;
+
+    double GrossTotalUSD = 0;
+    double TaxTotalUSD = 0;
+    double NetVAT15TotalUSD = 0;
+    double NetNonVATTotalUSD = 0;
+    double NetExemptTotalUSD = 0;
+    double NetTotalUSD = 0;
+    double TaxVAT15USD = 0;
+    double getGrossTotalVAT15USD = 0;
+    double getGrossTotalNonVATUSD =0;
+    double getGrossTotalExemptUSD = 0;
+    double GrossTotalVAT15USD = 0;
+    double GrossTotalNonVATUSD = 0;
+    double GrossTotalExemptUSD = 0;
+    double getTotalTaxAmountUSD = 0;
+
+    double GrossTotalZAR = 0;
+    double TaxTotalZAR = 0;
+    double NetVAT15TotalZAR = 0;
+    double NetNonVATTotalZAR = 0;
+    double NetExemptTotalZAR = 0;
+    double NetTotalZAR = 0;
+    double TaxVAT15ZAR = 0;
+    double getGrossTotalVAT15ZAR = 0;
+    double getGrossTotalNonVATZAR =0;
+    double getGrossTotalExemptZAR = 0;
+    double GrossTotalVAT15ZAR = 0;
+    double GrossTotalNonVATZAR = 0;
+    double GrossTotalExemptZAR = 0;
+    double getTotalTaxAmountZAR = 0;
+
+    int InvoicesCountZWG = 0;
+  	double InvoicesTotalAmountZWG = 0;
+  	int CreditNotesCountZWG = 0; 
+  	double CreditNotesTotalAmountZWG = 0;
+  	int TotalDocumentsCountZWG = 0;
+  	double TotalDocumentsTotalAmountZWG = 0;
+
+    int InvoicesCountUSD = 0;
+  	double InvoicesTotalAmountUSD = 0;
+  	int CreditNotesCountUSD = 0; 
+  	double CreditNotesTotalAmountUSD = 0;
+  	int TotalDocumentsCountUSD = 0;
+  	double TotalDocumentsTotalAmountUSD = 0;
+
+    int InvoicesCountZAR = 0;
+  	double InvoicesTotalAmountZAR = 0;
+  	int CreditNotesCountZAR = 0; 
+  	double CreditNotesTotalAmountZAR = 0;
+  	int TotalDocumentsCountZAR = 0;
+  	double TotalDocumentsTotalAmountZAR = 0;
+
+    Future<void> prepareZWGZReportTotals() async{
+      final ZWGtotals = await dbHelper.getZReportTotals(currentFiscal ,  'ZWG');
+      GrossTotalZWG  = ZWGtotals[0]['sumZWGReceiptTotal'] ?? 0.0;
+      TaxTotalZWG  = ZWGtotals[0]['sumZWGTaxAmount'] ?? 0.0;
+      getGrossTotalVAT15ZWG =  ZWGtotals[0]['sumZWG15VAT']?? 0.0;
+      getGrossTotalNonVATZWG = ZWGtotals[0]['sumZWGNonVAT']?? 0.0;
+      getGrossTotalExemptZWG = ZWGtotals[0]['sumZWGExempt']?? 0.0;
+      setState(() {
+        TaxVAT15ZWG = TaxTotalZWG;
+        GrossTotalVAT15ZWG = getGrossTotalVAT15ZWG;
+        GrossTotalNonVATZWG =getGrossTotalNonVATZWG;
+        GrossTotalExemptZWG = getGrossTotalExemptZWG;
+      });
+      //getZWLVAT gross total
+      getTotalTaxAmount = ZWGtotals[0]['sumZWGTaxAmount']?? 0.0;
+      NetVAT15TotalZWG = GrossTotalVAT15ZWG - getTotalTaxAmount;
+      NetNonVATTotalZWG = GrossTotalNonVATZWG ;
+      NetExemptTotalZWG = GrossTotalExemptZWG;
+    }
+
+    Future<void> prepareUSZreportTotals()async{
+      final USDtotals = await dbHelper.getZReportTotals(currentFiscal ,  'USD');
+      GrossTotalUSD  = USDtotals[0]['sumZWGReceiptTotal']?? 0.0;
+      TaxTotalUSD  = USDtotals[0]['sumZWGTaxAmount']?? 0.0;
+      getGrossTotalVAT15USD =  USDtotals[0]['sumZWG15VAT']?? 0.0;
+      getGrossTotalNonVATUSD = USDtotals[0]['sumZWGNonVAT']?? 0.0;
+      getGrossTotalExemptUSD = USDtotals[0]['sumZWGExempt']?? 0.0;
+      setState(() {
+        TaxVAT15USD = TaxTotalUSD;
+        GrossTotalVAT15USD = getGrossTotalVAT15USD;
+        GrossTotalNonVATUSD =getGrossTotalNonVATUSD;
+        GrossTotalExemptUSD = getGrossTotalExemptUSD;
+      });
+
+      getTotalTaxAmountUSD = USDtotals[0]['sumZWGTaxAmount']?? 0.0;
+      NetVAT15TotalUSD = GrossTotalVAT15USD - getTotalTaxAmountUSD;
+      NetNonVATTotalUSD = GrossTotalNonVATUSD ;
+      NetExemptTotalUSD = GrossTotalExemptUSD;
+
+    }
+
+    Future<void> prepareZARZreportTotals()async{
+      final ZARtotals = await dbHelper.getZReportTotals(currentFiscal ,  'ZAR');
+      GrossTotalZAR  = ZARtotals[0]['sumZWGReceiptTotal']?? 0.0;
+      TaxTotalZAR  = ZARtotals[0]['sumZWGTaxAmount']?? 0.0;
+      getGrossTotalVAT15ZAR =  ZARtotals[0]['sumZWG15VAT']?? 0.0;
+      getGrossTotalNonVATZAR = ZARtotals[0]['sumZWGNonVAT']?? 0.0;
+      getGrossTotalExemptZAR = ZARtotals[0]['sumZWGExempt']?? 0.0;
+      setState(() {
+        TaxVAT15ZAR = TaxTotalZAR;
+        GrossTotalVAT15ZAR = getGrossTotalVAT15ZAR;
+        GrossTotalNonVATZAR =getGrossTotalNonVATZAR;
+        GrossTotalExemptZAR= getGrossTotalExemptZAR;
+      });
+      //getZWLVAT gross total
+
+      getTotalTaxAmountZAR = ZARtotals[0]['sumZWGTaxAmount'] ?? 0.0;
+      NetVAT15TotalZAR = GrossTotalVAT15ZAR - getTotalTaxAmountZAR;
+      NetNonVATTotalZAR = GrossTotalNonVATZAR;
+      NetExemptTotalZAR = GrossTotalExemptZAR;
+    }
+
+    Future<void> prepareZWGDocuments() async{
+      final Invoices  = await dbHelper.getDocumentsCounter(currentFiscal, 'ZWG', 'FISCALINVOICE');
+      final InvoicesTotal = await dbHelper.getZreportDocumentTotals(currentFiscal ,'FISCALINVOICE' , 'ZWG');
+      final Creditnotes = await dbHelper.getDocumentsCounter(currentFiscal, 'ZWG', 'CREDITNOTE');
+      final CreditnotesTotals = await dbHelper.getZreportDocumentTotals(currentFiscal, 'CREDITNOTE', 'ZWG');
+      setState(() {
+        InvoicesCountZWG = Invoices[0]['count']?? 0;
+        InvoicesTotalAmountZWG = InvoicesTotal[0]['total']?? 0.0;
+        CreditNotesCountZWG = Creditnotes[0]['count']?? 0;
+        CreditNotesTotalAmountZWG = CreditnotesTotals[0]['total']?? 0.0;
+      });
+    }
+
+    Future<void> prepareUSDDocuments() async{
+      final Invoices  = await dbHelper.getDocumentsCounter(currentFiscal, 'USD', 'FISCALINVOICE');
+      final InvoicesTotal = await dbHelper.getZreportDocumentTotals(currentFiscal ,'FISCALINVOICE' , 'USD');
+      final Creditnotes = await dbHelper.getDocumentsCounter(currentFiscal, 'USD', 'CREDITNOTE');
+      final CreditnotesTotals = await dbHelper.getZreportDocumentTotals(currentFiscal, 'CREDITNOTE', 'USD');
+      setState(() {
+        InvoicesCountUSD = Invoices[0]['count']?? 0;
+        InvoicesTotalAmountUSD = InvoicesTotal[0]['total']?? 0.0;
+        CreditNotesCountUSD = Creditnotes[0]['count']?? 0;
+        CreditNotesTotalAmountUSD = CreditnotesTotals[0]['total']?? 0.0;
+      });
+    }
+
+    Future<void> prepareZARDocuments() async{
+      final Invoices  = await dbHelper.getDocumentsCounter(currentFiscal, 'ZAR', 'FISCALINVOICE');
+      final InvoicesTotal = await dbHelper.getZreportDocumentTotals(currentFiscal ,'FISCALINVOICE' , 'ZAR');
+      final Creditnotes = await dbHelper.getDocumentsCounter(currentFiscal, 'ZAR', 'CREDITNOTE');
+      final CreditnotesTotals = await dbHelper.getZreportDocumentTotals(currentFiscal, 'CREDITNOTE', 'ZAR');
+      setState(() {
+        InvoicesCountZAR = Invoices[0]['count']?? 0;
+        InvoicesTotalAmountZAR = InvoicesTotal[0]['total']?? 0.0;
+        CreditNotesCountZAR = Creditnotes[0]['count']?? 0;
+        CreditNotesTotalAmountZAR = CreditnotesTotals[0]['total']?? 0.0;
+      });
+    }
+
+
+
+  Future<void> print80mmZReport({
+    Printer? selectedPrinter
+  }) async{
+
+    await prepareZWGZReportTotals();
+    await prepareZWGDocuments();
+    await prepareUSZreportTotals();
+    await prepareUSDDocuments();
+    await prepareZARZreportTotals();
+    await prepareZARDocuments();
+
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.Page(
+        pageFormat:const PdfPageFormat(80 * PdfPageFormat.mm, double.infinity),
+        build: (pw.Context context){
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
               pw.Container(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                "Credited Invoice",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                "$tradeName",
+                style: pw.TextStyle(fontSize:10, fontWeight: pw.FontWeight.bold),
                 textAlign: pw.TextAlign.center,
               ),
-              ) :
-              pw.SizedBox.shrink(),
-            isReceiptCreditNote == 1 ?
-              pw.Text("Device Serial No: $serialNo", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-              pw.SizedBox.shrink(),
-            isReceiptCreditNote == 1 ?
-              pw.Text("Invoice No: ${receipt['creditDebitNote']['receiptGlobalNo']}", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-              pw.SizedBox.shrink(),
-            isReceiptCreditNote == 1 ?
-              pw.Text("Date: $dateForCreditNote", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-              pw.SizedBox.shrink(),
-            isReceiptCreditNote == 1 ?
-              pw.Text("Customer Reference No: CR-127" , style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-              pw.SizedBox.shrink(),
-            pw.Divider(),
-            pw.Text("Description", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.Text("  Qty          UnitPrice          Vat          AmountInc", style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)),
-            isReceiptCreditNote == 1 ? 
-            pw.Divider() : pw.SizedBox.shrink(),
-            ...List<pw.Widget>.from(
-              (receipt['receiptLines'] as List<dynamic>).map((item) {
-                double productUnitPrice = double.tryParse(item['receiptLinePrice']) ?? 0.0;
-                final double productVat;
-                final double producttax;
-                final double totalAmount = double.tryParse(item['receiptLineTotal'].toString()) ?? 0.0;
-                if(item['taxCode'] == 'A' || item['taxCode'] == 'B'){
-                  productVat = 0.00;
-                } else{
-                  productVat = productUnitPrice - (productUnitPrice/1.15);
-                  productUnitPrice = productUnitPrice/1.15;
-                }
-                // return pw.Text(
-                //   "${item['receiptLineName']} \n     ${item['receiptLineQuantity']}                    ${productUnitPrice.toStringAsFixed(2)}                     ${productVat.toStringAsFixed(2)}                 ${item['receiptLineTotal']}",
-                //   style: pw.TextStyle(fontSize: 8,),
-                // );
-               return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "TIN: $taxPayerTIN",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "VAT No: $taxPayerVatNumber",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "$taxPayerAddress",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                  child: pw.Text(
+                  "$taxPayerEmail",
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.SizedBox(
+                  child: pw.Text(
+                    "$taxPayerPhone",
+                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+              ),
+              pw.Divider(),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.SizedBox(
+                  child: pw.Text(
+                    "Z REPORT",
+                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+              ),
+              pw.Divider(),
+              pw.Text("Fiscal Day No: $currentFiscal",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Fiscal Day Opened:",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Device Serial No: $serialNo",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Device Id: $deviceID",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Divider(),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.SizedBox(
+                  child: pw.Text(
+                    "Daily Totals",
+                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+              ),
+              pw.Divider(),
+              pw.Text("ZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("TOTAL NET SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Net , VAT 15%: $NetVAT15TotalZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Net , Non-VAT 0%: $NetNonVATTotalZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Net , Exempt: $NetExemptTotalZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total Net Amount: $NetTotalZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("TOTAL TAXES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Tax , VAT 15 %: $TaxVAT15ZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total tax amount: $TaxTotalZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("TOTAL GROSS SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , VAT 15 %: $GrossTotalVAT15ZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , Non-VAT 0 %: $GrossTotalNonVATZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , Exempt: $GrossTotalExemptZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total gross amount: $GrossTotalZWG",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Documents               Quantity                Total Amount", 
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
-                  pw.Text(
-                    "${item['receiptLineName']}",
-                    style: pw.TextStyle(fontSize: 8),
+                  // Quantity (tight width)
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Invoices",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
                   ),
-                  pw.SizedBox(height: 2),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.start,
-                    children: [
-                      // Quantity (tight width)
-                      pw.SizedBox(
-                        width: 25,
-                        child: pw.Text(
-                          "${item['receiptLineQuantity']}",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.left,
-                        ),
-                      ),
-                      // Small space
-                      pw.SizedBox(width: 15),
-
-                      // Unit Price (fixed width)
-                      pw.SizedBox(
-                        width: 40,
-                        child: pw.Text(
-                          productUnitPrice.toStringAsFixed(2),
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ),
-
-                      pw.SizedBox(width: 20),
-
-                      // VAT (tight width)
-                      pw.SizedBox(
-                        width: 35,
-                        child: pw.Text(
-                          productVat.toStringAsFixed(2),
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ),
-
-                      pw.SizedBox(width: 15),
-
-                      // Total (takes remaining space)
-                      pw.SizedBox(
-                        width: 50,
-                        child: pw.Text(
-                          "${item['receiptLineTotal']}",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                          softWrap: false,
-                          overflow: pw.TextOverflow.clip,
-                        ),
-                      ),
-                    ],
+                  // Small space
+                  pw.SizedBox(width: 15),
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      InvoicesCountZWG.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
                   ),
-                  pw.SizedBox(height: 4),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      InvoicesTotalAmountZWG.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
                 ],
-              );
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Credit notes",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
 
-              }),
-            ),
-            pw.Divider(),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.start,
-              children: [
-                pw.Text("SUBTOTAL:",style: pw.TextStyle(fontSize: 8,)),
-                pw.SizedBox(
-                        width: 154,
-                        child: pw.Text(
-                          "$currentInvoiceSubtotal",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                          softWrap: false,
-                          overflow: pw.TextOverflow.clip,
-                        ),
-                      ),
-              ]
-            ),
-            pw.SizedBox(height: 3),
-            //pw.Text("TOTAL VAT                                                                $receipttotalVat", style: pw.TextStyle(fontSize: 8,)),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.start,
-              children: [
-                pw.Text("TOTAL VAT:",style: pw.TextStyle(fontSize: 8,)),
-                pw.SizedBox(
-                        width: 154,
-                        child: pw.Text(
-                          "$receipttotalVat",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                          softWrap: false,
-                          overflow: pw.TextOverflow.clip,
-                        ),
-                      ),
-              ]
-            ),
-            pw.SizedBox(height: 3),
-            //pw.Text("TOTAL                                                                      $receiptinvoiceTotal" , style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.start,
-              children: [
-                pw.Text("TOTAL         :",style: pw.TextStyle(fontSize: 8,)),
-                pw.SizedBox(
-                        width: 152,
-                        child: pw.Text(
-                          "$receiptinvoiceTotal",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                          softWrap: false,
-                          overflow: pw.TextOverflow.clip,
-                        ),
-                      ),
-              ]
-            ),
-            pw.Divider(),
-            //pw.Text("PAID                                                                        $paid", style: pw.TextStyle(fontSize: 8,)),
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      CreditNotesCountZWG.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      CreditNotesTotalAmountZWG.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Total documents",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
 
-            isReceiptCreditNote == 1 ? pw.SizedBox.shrink() :
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.start,
-              children: [
-                pw.Text("PAID           :",style: pw.TextStyle(fontSize: 8,)),
-                pw.SizedBox(
-                        width: 152,
-                        child: pw.Text(
-                          "$paid",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                          softWrap: false,
-                          overflow: pw.TextOverflow.clip,
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      TotalDocumentsCountZWG.toString(),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      TotalDocumentsTotalAmountZWG.toString(),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Divider(),
+              pw.Text("USD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("TOTAL NET SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Net , VAT 15%: $NetVAT15TotalUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Net , Non-VAT 0%: $NetNonVATTotalUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Net , Exempt: $NetExemptTotalUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total Net Amount: $NetTotalUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("TOTAL TAXES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Tax , VAT 15 %: $TaxVAT15USD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total tax amount: $TaxTotalUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("TOTAL GROSS SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , VAT 15 %: $GrossTotalVAT15USD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , Non-VAT 0 %: $GrossTotalNonVATUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , Exempt: $GrossTotalExemptUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total gross amount: $GrossTotalUSD",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Documents               Quantity                Total Amount", 
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  // Quantity (tight width)
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Invoices",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      InvoicesCountUSD.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      InvoicesTotalAmountUSD.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Credit notes",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
+
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      CreditNotesCountUSD.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      CreditNotesTotalAmountUSD.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Total documents",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
+
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      TotalDocumentsCountUSD.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      TotalDocumentsTotalAmountUSD.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Divider(),
+              pw.Text("ZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("TOTAL NET SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Net , VAT 15%: $NetVAT15TotalZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Net , Non-VAT 0%: $NetNonVATTotalZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Net , Exempt: $NetExemptTotalZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total Net Amount: $NetTotalZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("TOTAL TAXES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Tax , VAT 15 %: $TaxVAT15ZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total tax amount: $TaxTotalZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("TOTAL GROSS SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , VAT 15 %: $GrossTotalVAT15ZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , Non-VAT 0 %: $GrossTotalNonVATZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total , Exempt: $GrossTotalExemptZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Total gross amount: $GrossTotalZAR",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
+              ),
+              pw.Text("Documents               Quantity                Total Amount", 
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  // Quantity (tight width)
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Invoices",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      InvoicesCountZAR.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      InvoicesTotalAmountZAR.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Credit notes",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
+
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      CreditNotesCountZAR.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      CreditNotesTotalAmountZAR.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.SizedBox(
+                    width: 25,
+                    child: pw.Text(
+                      "Total documents",
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.left,
+                    ),
+                  ),
+                  // Small space
+                  pw.SizedBox(width: 15),
+
+                  pw.SizedBox(
+                    width: 40,
+                    child: pw.Text(
+                      TotalDocumentsCountZAR.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 20),
+                  pw.SizedBox(
+                    width: 35,
+                    child: pw.Text(
+                      TotalDocumentsTotalAmountZAR.toStringAsFixed(2),
+                      style: pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+            ]
+          );
+        }
+      )
+    );
+    if (selectedPrinter != null) {
+      await Printing.directPrintPdf(
+        printer: selectedPrinter,
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+    } else {
+      // Otherwise open the print dialog
+      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+    }
+  }
+
+  Future<void> print80mmReceipt({
+    required Map<String, dynamic> receipt,
+    required String qrUrl,
+    required String qrData,
+    Printer? selectedPrinter, // Optional silent print
+  }) async {
+    final pdf = pw.Document();
+
+    String formattedQrData = formatString(qrData);   
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "$tradeName",
+                style: pw.TextStyle(fontSize:10, fontWeight: pw.FontWeight.bold),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "TIN: $taxPayerTIN",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "VAT No: $taxPayerVatNumber",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "$taxPayerAddress",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                  child: pw.Text(
+                  "$taxPayerEmail",
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.SizedBox(
+                child: pw.Text(
+                "$taxPayerPhone",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              ),
+              pw.Divider(),
+              isReceiptCreditNote == 1 ?
+                pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  "FISCAL CREDIT NOTE",
+                  style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ): 
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  "FISCAL TAX INVOICE",
+                  style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              pw.Divider(),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "Buyer",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerTradeName'] ?? 'Walk-in Customer'}",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "TIN: ${receipt['buyerData']?['buyerTIN'] ?? 'N/A'}",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "VAT: ${receipt['buyerData']?['VATNumber'] ?? 'N/A'}",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerContactS']['email'] ?? 'N/A'}",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerContactS']['phoneNo'] ?? 'N/A'}",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Divider(),
+              pw.Text("Date: ${receipt['receiptDate'] ?? ''}",style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)),
+              pw.Text("Currency: ${receipt['receiptCurrency'] ?? ''}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
+              isReceiptCreditNote == 1 ?
+              pw.Text("CreditNote No: ${receipt['invoiceNo'] ?? '#########'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
+              pw.Text("Invoice No: ${receipt['invoiceNo'] ?? '#########'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
+              isReceiptCreditNote == 1 ? 
+                pw.Text("Credit Reason: ${receipt['receiptNotes'] ?? 'No reason provided'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
+                pw.SizedBox.shrink(),
+              pw.Divider(),
+              isReceiptCreditNote == 1 ?
+                pw.Container(
+                  alignment: pw.Alignment.center,
+                  child: pw.Text(
+                  "Credited Invoice",
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                  textAlign: pw.TextAlign.center,
+                ),
+                ) :
+                pw.SizedBox.shrink(),
+              isReceiptCreditNote == 1 ?
+                pw.Text("Device Serial No: $serialNo", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
+                pw.SizedBox.shrink(),
+              isReceiptCreditNote == 1 ?
+                pw.Text("Invoice No: ${receipt['creditDebitNote']['receiptGlobalNo']}", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
+                pw.SizedBox.shrink(),
+              isReceiptCreditNote == 1 ?
+                pw.Text("Date: $dateForCreditNote", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
+                pw.SizedBox.shrink(),
+              isReceiptCreditNote == 1 ?
+                pw.Text("Customer Reference No: CR-127" , style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
+                pw.SizedBox.shrink(),
+              pw.Divider(),
+              pw.Text("Description", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text("  Qty          UnitPrice          Vat          AmountInc", style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)),
+              isReceiptCreditNote == 1 ? 
+              pw.Divider() : pw.SizedBox.shrink(),
+              ...List<pw.Widget>.from(
+                (receipt['receiptLines'] as List<dynamic>).map((item) {
+                  double productUnitPrice = double.tryParse(item['receiptLinePrice']) ?? 0.0;
+                  final double productVat;
+                  final double producttax;
+                  final double totalAmount = double.tryParse(item['receiptLineTotal'].toString()) ?? 0.0;
+                  if(item['taxCode'] == 'A' || item['taxCode'] == 'B'){
+                    productVat = 0.00;
+                  } else{
+                    productVat = productUnitPrice - (productUnitPrice/1.15);
+                    productUnitPrice = productUnitPrice/1.15;
+                  }
+                  // return pw.Text(
+                  //   "${item['receiptLineName']} \n     ${item['receiptLineQuantity']}                    ${productUnitPrice.toStringAsFixed(2)}                     ${productVat.toStringAsFixed(2)}                 ${item['receiptLineTotal']}",
+                  //   style: pw.TextStyle(fontSize: 8,),
+                  // );
+                return pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      "${item['receiptLineName']}",
+                      style: pw.TextStyle(fontSize: 8),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.start,
+                      children: [
+                        // Quantity (tight width)
+                        pw.SizedBox(
+                          width: 25,
+                          child: pw.Text(
+                            "${item['receiptLineQuantity']}",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.left,
+                          ),
                         ),
-                      ),
-              ]
-            ),
-            //pw.Text("CHANGE                                                                   $change", style: pw.TextStyle(fontSize: 8,)),
-            isReceiptCreditNote == 1 ? pw.SizedBox.shrink() :
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.start,
-              children: [
-                pw.Text("CHANGE     :",style: pw.TextStyle(fontSize: 8,)),
-                pw.SizedBox(
-                        width: 152,
-                        child: pw.Text(
-                          "$change",
-                          style: pw.TextStyle(fontSize: 8),
-                          textAlign: pw.TextAlign.right,
-                          softWrap: false,
-                          overflow: pw.TextOverflow.clip,
+                        // Small space
+                        pw.SizedBox(width: 15),
+
+                        // Unit Price (fixed width)
+                        pw.SizedBox(
+                          width: 40,
+                          child: pw.Text(
+                            productUnitPrice.toStringAsFixed(2),
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                          ),
                         ),
-                      ),
-              ]
-            ),
-            pw.Divider(),
-            pw.Align(
-              alignment: pw.Alignment.center,
-              child: pw.BarcodeWidget(
-              barcode: pw.Barcode.qrCode(),
-              data: qrUrl,
-              width: 50,
-              height: 50,
-            ),
-            ),
-            pw.SizedBox(height: 3),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "You can verify this manually at https://fdmstest.zimra.co.zw",
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.SizedBox(height: 3),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "Verification Code:\n$formattedQrData",
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "DeviceID : $deviceID",
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "Fiscal Day No: $currentFiscal",
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "Invoice No: ${receipt['receiptGlobalNo']}",
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.SizedBox(height: 8),
-            pw.Container(
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-              "Powered by tigerweb.co.zw",
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-              textAlign: pw.TextAlign.center,
-            ),
-            ),
-            pw.Text("", textAlign: pw.TextAlign.center),
-          ],
-        );
+
+                        pw.SizedBox(width: 20),
+
+                        // VAT (tight width)
+                        pw.SizedBox(
+                          width: 35,
+                          child: pw.Text(
+                            productVat.toStringAsFixed(2),
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                          ),
+                        ),
+
+                        pw.SizedBox(width: 15),
+
+                        // Total (takes remaining space)
+                        pw.SizedBox(
+                          width: 50,
+                          child: pw.Text(
+                            "${item['receiptLineTotal']}",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 4),
+                  ],
+                );
+
+                }),
+              ),
+              pw.Divider(),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.Text("SUBTOTAL:",style: pw.TextStyle(fontSize: 8,)),
+                  pw.SizedBox(
+                          width: 154,
+                          child: pw.Text(
+                            "$currentInvoiceSubtotal",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
+                ]
+              ),
+              pw.SizedBox(height: 3),
+              //pw.Text("TOTAL VAT                                                                $receipttotalVat", style: pw.TextStyle(fontSize: 8,)),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.Text("TOTAL VAT:",style: pw.TextStyle(fontSize: 8,)),
+                  pw.SizedBox(
+                          width: 154,
+                          child: pw.Text(
+                            "$receipttotalVat",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
+                ]
+              ),
+              pw.SizedBox(height: 3),
+              //pw.Text("TOTAL                                                                      $receiptinvoiceTotal" , style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.Text("TOTAL         :",style: pw.TextStyle(fontSize: 8,)),
+                  pw.SizedBox(
+                          width: 152,
+                          child: pw.Text(
+                            "$receiptinvoiceTotal",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
+                ]
+              ),
+              pw.Divider(),
+              //pw.Text("PAID                                                                        $paid", style: pw.TextStyle(fontSize: 8,)),
+
+              isReceiptCreditNote == 1 ? pw.SizedBox.shrink() :
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.Text("PAID           :",style: pw.TextStyle(fontSize: 8,)),
+                  pw.SizedBox(
+                          width: 152,
+                          child: pw.Text(
+                            "$paid",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
+                ]
+              ),
+              //pw.Text("CHANGE                                                                   $change", style: pw.TextStyle(fontSize: 8,)),
+              isReceiptCreditNote == 1 ? pw.SizedBox.shrink() :
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.Text("CHANGE     :",style: pw.TextStyle(fontSize: 8,)),
+                  pw.SizedBox(
+                          width: 152,
+                          child: pw.Text(
+                            "$change",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
+                ]
+              ),
+              pw.Divider(),
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.BarcodeWidget(
+                barcode: pw.Barcode.qrCode(),
+                data: qrUrl,
+                width: 50,
+                height: 50,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "You can verify this manually at https://fdmstest.zimra.co.zw",
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "Verification Code:\n$formattedQrData",
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "DeviceID : $deviceID",
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "Fiscal Day No: $currentFiscal",
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "Invoice No: ${receipt['receiptGlobalNo']}",
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "Powered by tigerweb.co.zw",
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Text("", textAlign: pw.TextAlign.center),
+            ],
+          );
       },
     ),
   );
@@ -3032,6 +3779,17 @@ Future<void> submitReceipt() async {
                     leading: const Icon(Icons.data_thresholding_sharp),
                     title: const Text('Reporting'),
                     onTap: () => Get.to(()=> const FiscalreportsPage()),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.data_thresholding_sharp),
+                    title: const Text('Print Fiscal Day Z Report'),
+                    onTap: (){
+                      try {
+                        handleZReportPrint();
+                      } catch (e) {
+                        Get.snackbar("Z Report Printing Error", "$e" , snackPosition: SnackPosition.TOP, backgroundColor: Colors.red , colorText: Colors.white );
+                      }
+                    },
                   ),
                    ListTile(
                     leading: const Icon(Icons.data_thresholding_sharp),

@@ -8,6 +8,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CompanydetailsPage extends StatefulWidget {
   const CompanydetailsPage({super.key});
@@ -30,6 +32,7 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
   void initState() {
     super.initState();
     fetchTaxPayerDetails();
+    showSelectedPrinter();
   }
 
   //get submitted receipts
@@ -863,6 +866,59 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
 
   }
 
+
+  Future<void> saveSelectedPrinter(String printerName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('preferred_printer', printerName);
+  }
+
+  Future<String?> getSelectedPrinter() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('preferred_printer');
+  }
+
+  Future<void> clearSelectedPrinter() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('preferred_printer');
+  }
+  String? selectedPrinter;
+  Future<void> showSelectedPrinter() async{
+    final selectedPrinter1 = await getSelectedPrinter();
+    setState(() {
+      selectedPrinter = selectedPrinter1;
+    });
+  }
+
+  Future<void> showPrinterSelectionDialog(BuildContext context) async {
+  final printers = await Printing.listPrinters();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Select a printer"),
+        content: SizedBox(
+          width: 300,
+          height: 300,
+          child: ListView.builder(
+            itemCount: printers.length,
+            itemBuilder: (context, index) {
+              final printer = printers[index];
+              return ListTile(
+                title: Text(printer.name),
+                onTap: () async {
+                  await saveSelectedPrinter(printer.name);
+                  Navigator.of(context).pop();
+                },
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1005,6 +1061,55 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                 ),
               ),
             ) :const SizedBox(height: 2,),
+            Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: CustomOutlineBtn(
+                text: "Select Printer",
+                height: 45,
+                width: 600,
+                color: Colors.green,
+                color2: Colors.green,
+                icon: const Icon(Icons.print_rounded, color: Colors.white,),
+                onTap: (){
+                  showPrinterSelectionDialog(context);
+                },
+              ),
+            ),
+            const SizedBox(height: 20,),
+            Container(
+              height: 45,
+              width: 600,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10.0),
+                boxShadow: [
+                  BoxShadow(
+                    offset: Offset(0, 6),
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: 4
+                  )
+                ]
+              ),
+              child: Center(
+                child: Text("${selectedPrinter}" , style: TextStyle(fontWeight: FontWeight.w600),),
+              ),
+            ),
+            const SizedBox(height: 20,),
+            Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: CustomOutlineBtn(
+                text: "Clear Printer Name",
+                height: 45,
+                width: 600,
+                color: Colors.green,
+                color2: Colors.green,
+                icon: const Icon(Icons.print_rounded, color: Colors.white,),
+                onTap: (){
+                  clearSelectedPrinter();
+                },
+              ),
+            )
         ],
       ),
     );

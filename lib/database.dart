@@ -77,21 +77,28 @@ Future<Database> initDB() async {
 }
 
 
-Future<void> clearAllData() async {
-  final Database db = await initDB();
-  await db.execute('DELETE FROM users');
-  await db.execute('DELETE FROM products');
-  await db.execute('DELETE FROM invoices');
-  await db.execute('DELETE FROM sales');
-  await db.execute('DELETE FROM customer');
-  await db.execute('DELETE FROM stockPurchases');
-  await db.execute('DELETE FROM companyDetails');
-  await db.execute('DELETE FROM paymentMethods');
-  await db.execute('DELETE FROM openDay');
-  await db.execute('DELETE FROM submittedReceipts');
-  await db.execute('DELETE FROM credit_notes');
-  await db.execute('DELETE FROM taxPayerDetails');
-}
+  Future<void> clearAllData() async {
+    final Database db = await initDB();
+
+    await db.execute('DELETE FROM users');
+    await db.execute('DELETE FROM products');
+    await db.execute('DELETE FROM invoices');
+    await db.execute('DELETE FROM sales');
+    await db.execute('DELETE FROM customer');
+    await db.execute('DELETE FROM stockPurchases');
+    await db.execute('DELETE FROM companyDetails');
+    await db.execute('DELETE FROM paymentMethods');
+    await db.execute('DELETE FROM openDay');
+    await db.execute('DELETE FROM submittedReceipts');
+    await db.execute('DELETE FROM credit_notes');
+    await db.execute('DELETE FROM taxPayerDetails');
+
+    // 🔁 Reset auto-increment counters
+    await db.execute('DELETE FROM sqlite_sequence');
+
+    print("✅ All data cleared and auto-increment counters reset.");
+  }
+
 
 
 
@@ -453,6 +460,7 @@ Future<void> clearAllData() async {
       }
         return 1; // Default value if no records exist
       }
+      
     Future<int> getNextReceiptCounter(int fiscalDayNo) async {
       final db = await initDB();
       List<Map<String, dynamic>> result = await db.rawQuery(

@@ -16,6 +16,7 @@ import 'package:fdmsgateway/fiscalization/submittedReceipts.dart';
 import 'package:fdmsgateway/forms/companyDetails.dart';
 import 'package:fdmsgateway/forms/fiscalReports.dart';
 import 'package:fdmsgateway/signatureGeneration.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -27,6 +28,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf_text/pdf_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:path/path.dart' as path;
@@ -102,8 +104,8 @@ class _MyHomePageState extends State<MyHomePage> {
   String? encodedHash;
   String? signature64 ;
   String? signatureMD5 ;
-  int deviceID = 25792;
-  String genericzimraqrurl = "https://fdmstest.zimra.co.zw/";
+  int deviceID = 0000;
+  String genericzimraqrurl = "https://fdms.zimra.co.zw/";
   List<Map<String, dynamic>> receiptsPending= [];
   List<Map<String, dynamic>> receiptsSubmitted= [];
   List<Map<String , dynamic>> allReceipts=[];
@@ -211,7 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     try {
       final response = await ioClient.post(
-        Uri.parse("https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/OpenDay"), // Update this URL
+        Uri.parse("https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/OpenDay"), // Update this URL
         headers: {
           "Content-Type": "application/json",
           "DeviceModelName": "Server",
@@ -234,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 Future<String> getConfig() async {
-  String apiEndpointGetConfig = "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/GetConfig"; // Replace with actual API endpoint
+  String apiEndpointGetConfig = "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/GetConfig"; // Replace with actual API endpoint
   String responseMessage = "There was no response from the server. Check your connection !!";
   //final securityContext = await createSSLContext(); // Your working method
   SSLContextProvider sslContextProvider = SSLContextProvider();
@@ -369,7 +371,7 @@ Future<String> getConfig() async {
   
   Future<void> getStatus() async {
     String apiEndpointGetStatus =
-      "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/GetStatus";
+      "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/GetStatus";
     const String deviceModelName = "Server";
     const String deviceModelVersion = "v1";
 
@@ -393,7 +395,7 @@ Future<String> getConfig() async {
   }
   Future<String> ping() async {
     String apiEndpointPing =
-        "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/Ping";
+        "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/Ping";
     const String deviceModelName = "Server";
     const String deviceModelVersion = "v1"; 
 
@@ -431,7 +433,7 @@ Future<String> getConfig() async {
     // Get the database instance
     final db = await dbHelper.initDB();
     String apiEndpointSubmitReceipt =
-      "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
+      "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
     const String deviceModelName = "Server";
     const String deviceModelVersion = "v1"; 
     SSLContextProvider sslContextProvider = SSLContextProvider();
@@ -546,12 +548,18 @@ Future<String> getConfig() async {
     return buffer.toString();
   }
   // This function might be called after signing
+  Future<String?> getSelectedPrinter() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('preferred_printer');
+  }
+
   Future<void> handleReceiptPrint(Map<String, dynamic> receiptData, String qrData , String receiptQrData) async {
     print("Now printing on 80mm");
+    final storedPrinterName = await getSelectedPrinter();
     try {
     // Optional: fetch printers and pre-select one (to avoid dialog)
     final printers = await Printing.listPrinters();
-    final selected = printers.firstWhere((p) => p.name.contains("XP-80C")); // Your printer
+    final selected = printers.firstWhere((p) => p.name.contains(storedPrinterName.toString())); // Your printer
     final receiptDataData = receiptData['receipt'];
     print(receiptDataData);
       await print80mmReceipt(
@@ -566,11 +574,12 @@ Future<String> getConfig() async {
   }
 
   Future<void> handleZReportPrint() async{
+    final storedPrinterName = await getSelectedPrinter();
     try {
       final printers = await Printing.listPrinters();
-      final selectedPrinter = printers.firstWhere((p) => p.name.contains("XP-80C"));
+      final selected = printers.firstWhere((p) => p.name.contains(storedPrinterName.toString())); // Your printer
       await print80mmZReport(
-        selectedPrinter: selectedPrinter
+        selectedPrinter: selected
       ); 
     } catch (e) {
       Get.snackbar(
@@ -1508,7 +1517,7 @@ Future<String> getConfig() async {
                   final double productVat;
                   final double producttax;
                   final double totalAmount = double.tryParse(item['receiptLineTotal'].toString()) ?? 0.0;
-                  if(item['taxCode'] == 'A' || item['taxCode'] == 'B'){
+                  if(item['taxCode'] == 'C' || item['taxCode'] == 'B'){
                     productVat = 0.00;
                   } else{
                     productVat = productUnitPrice - (productUnitPrice/1.15);
@@ -1689,7 +1698,7 @@ Future<String> getConfig() async {
               pw.Container(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                "You can verify this manually at https://fdmstest.zimra.co.zw",
+                "You can verify this manually at https://fdms.zimra.co.zw",
                 style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
                 textAlign: pw.TextAlign.center,
               ),
@@ -1757,6 +1766,55 @@ Future<String> getConfig() async {
 
   
   Queue<File> pendingFiles = Queue<File>();
+
+  //=====================ORIGINAL START ENGINE==================================================///////
+
+  // void startEngine() {
+  //   totalAmount = 0.0;
+  //   taxAmount = 0.0;
+  //   receiptItems.clear();
+  //   selectedCustomer.clear();
+  //   currentReceiptGlobalNo = "";
+  //   currentUrl = "";
+  //   currentDayNo = "";
+  //   if (isRunning) return;
+  //   setState(() => isRunning = true);
+  //   print("🟢 Engine Started");
+
+  //   final inputWatcher = DirectoryWatcher(inputFolder.path);
+  //   final signedWatcher = DirectoryWatcher(signedFolder.path);
+
+  //   // inputSub = inputWatcher.events.listen((event) async {
+  //   //   if (event.type == ChangeType.ADD && event.path.toLowerCase().endsWith('.pdf')) {
+  //   //     await processNext();
+  //   //   }
+  //   // });
+  //   inputSub = inputWatcher.events.listen((event) async {
+  //     if (event.type == ChangeType.ADD && event.path.toLowerCase().endsWith('.pdf')) {
+  //       final file = File(event.path);
+  //       if (!pendingFiles.any((f) => f.path == file.path)) {
+  //         pendingFiles.add(file);
+  //         print("📥 Queued: ${file.path}");
+  //         processNext();
+  //       }
+  //        // Safe to call always
+  //     }
+  //   });
+
+
+  //   signedSub = signedWatcher.events.listen((event) async {
+  //     if (event.type == ChangeType.ADD && event.path.toLowerCase().endsWith('.pdf')) {
+  //       await processNext();
+  //     }
+  //   });
+
+  //   // Start immediately if any files exist
+  //   processNext();
+  // }
+
+
+  //=====================UPDATED START ENGINE==================================================///////
+
   void startEngine() {
     totalAmount = 0.0;
     taxAmount = 0.0;
@@ -1765,6 +1823,7 @@ Future<String> getConfig() async {
     currentReceiptGlobalNo = "";
     currentUrl = "";
     currentDayNo = "";
+
     if (isRunning) return;
     setState(() => isRunning = true);
     print("🟢 Engine Started");
@@ -1772,11 +1831,6 @@ Future<String> getConfig() async {
     final inputWatcher = DirectoryWatcher(inputFolder.path);
     final signedWatcher = DirectoryWatcher(signedFolder.path);
 
-    // inputSub = inputWatcher.events.listen((event) async {
-    //   if (event.type == ChangeType.ADD && event.path.toLowerCase().endsWith('.pdf')) {
-    //     await processNext();
-    //   }
-    // });
     inputSub = inputWatcher.events.listen((event) async {
       if (event.type == ChangeType.ADD && event.path.toLowerCase().endsWith('.pdf')) {
         final file = File(event.path);
@@ -1785,10 +1839,8 @@ Future<String> getConfig() async {
           print("📥 Queued: ${file.path}");
           processNext();
         }
-         // Safe to call always
       }
     });
-
 
     signedSub = signedWatcher.events.listen((event) async {
       if (event.type == ChangeType.ADD && event.path.toLowerCase().endsWith('.pdf')) {
@@ -1796,9 +1848,26 @@ Future<String> getConfig() async {
       }
     });
 
-    // Start immediately if any files exist
+    // 🔍 Scan and queue any existing .pdf files in the input folder at startup
+    final existingFiles = inputFolder
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.path.toLowerCase().endsWith('.pdf'));
+
+    for (final file in existingFiles) {
+      if (!pendingFiles.any((f) => f.path == file.path)) {
+        pendingFiles.add(file);
+        print("📁 Found existing: ${file.path}");
+      }
+    }
+
+    // ▶️ Start processing queue
     processNext();
   }
+
+
+
+
 
    void killEngine() {
     setState(() => isRunning = false);
@@ -1811,159 +1880,315 @@ Future<String> getConfig() async {
   //Process next PDF file
   Map<String, dynamic> invoiceDetails = {};
 
+  ///////====================================ORIGINAL PROCESS NEXT==============================================///////////
+  ///
   
+  // Future<void> processNext() async {
+  //   print("🚦 processNext called | isProcessing: $isProcessing | queue: ${pendingFiles.length}");
+  //   if (!isRunning || isProcessing || pendingFiles.isEmpty) return;
+
+  //   receiptItems.clear();
+  //   isProcessing = true;
+  //   final file = pendingFiles.removeFirst();
+  //   print("📤 Uploading: ${path.basename(file.path)}");
+
+  //   if(isReceipt == 1){
+  //     try {
+  //       final uri = Uri.parse("http://localhost:5000/extract_receipt");
+  //       final request = http.MultipartRequest('POST', uri)
+  //         ..files.add(await http.MultipartFile.fromPath('file', file.path));
+
+  //       final streamedResponse = await request.send();
+  //       final response = await http.Response.fromStream(streamedResponse);
+  //       if (response.statusCode == 200) {
+  //         print("✅ Extracted receipt");
+  //         final Map<String, dynamic> responseData = jsonDecode(response.body);
+  //         final String documentType = responseData['document_type'];
+  //         if(documentType == 'receipt'){
+  //           final List<dynamic> tableData = responseData['line_items'];
+  //           final Map<String, dynamic> customerDetails = responseData['customer_details'];
+  //           final Map<String , dynamic> totals = responseData['totals'];
+  //           final buyerAddress = customerDetails['buyerAddress'];
+  //           setState(() {
+  //             //invoiceDetails = invoiceDetailsInner;
+  //             currentInvoiceSubtotal = totals['invoice_subtotal'];
+  //             receipttotalVat = totals['total_vat'];
+  //             transactionCurrency = responseData['invoice_currency'];
+  //             currentInvoiceNumber = responseData['invoice_number'];
+  //             receiptinvoiceTotal = totals['invoice_total'];
+  //             paid  = totals['paid'];
+  //             change = totals['change'];
+  //             if(customerDetails['name'] =='Cash' ||  customerDetails['name'] == null ){
+  //               selectedCustomer.clear();
+  //             }else{
+  //               selectedCustomer.add({
+  //                 'customerName': customerDetails['name'],
+  //                 'customerVAT': customerDetails['vat_number'],
+  //                 'customerTIN': customerDetails['tin'],
+  //                 //'customerAddress': customerDetails['address'] ?? 'Unknown',
+  //                 'customerPhone': customerDetails['phone'],
+  //                 'customerEmail': customerDetails['email'] != "null" ? customerDetails['email'] : 'noemail@email.com',
+  //                 'houseNO' : buyerAddress['houseNo'],
+  //                 'street': buyerAddress['street'],
+  //                 'province': buyerAddress['province'],
+  //                 'city': buyerAddress['city']
+  //               });
+  //             }
+  //           });
+  //           print(tableData);
+  //           print("adding items");
+  //           await addReceiptItem(tableData);
+  //           print("done with adding items");
+  //           await generateFiscalJSON();
+  //           await submitReceipt();
+  //           //await stampInvoice(pdfFile: file, dayNo: currentDayNo.toString(), receiptGlobalNo: currentReceiptGlobalNo.toString(), signature: currentUrl.toString());
+  //           final destPath = path.join(signedFolder.path, path.basename(file.path));
+  //           await file.rename(destPath);
+  //           print("📁 Moved to Signed: ${path.basename(destPath)}");
+  //         }
+  //         else if(documentType == 'credit_note'){
+  //           isReceiptCreditNote = 1;
+  //           final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
+  //           final List<dynamic> tableData = responseData['line_items'];
+  //           currentInvoiceNumber = creditNoteDetails['credit_note_number'];
+  //           final String reference = creditNoteDetails['reference_number'] ;
+  //           final String reason  = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
+  //           final Map<String , dynamic> totals = responseData['totals'];
+  //           setState(() {
+  //             creditReason = reason;
+  //             creditedInvoice = reference;
+  //             receiptinvoiceTotal = totals['invoice_total'];
+  //             currentInvoiceSubtotal = totals['invoice_subtotal'];
+  //             receipttotalVat = totals['total_vat'];
+  //             paid  = totals['paid'];
+  //           });
+  //           await generateCreditFiscalJSON();
+  //           final destPath = path.join(signedFolder.path, path.basename(file.path));
+  //           await file.rename(destPath);
+  //           print("📁 Moved to Signed: ${path.basename(destPath)}");
+  //         }
+  //       } else {
+  //         print("❌ Server Error: ${response.statusCode}");
+  //       }
+  //     } catch (e) {
+  //       print("❌ Exception: $e");
+  //     } finally {
+  //       isProcessing = false;
+  //     }
+  //   }else{
+  //     try {
+  //       final uri = Uri.parse("http://localhost:5000/extract_invoice");
+  //       final request = http.MultipartRequest('POST', uri)
+  //         ..files.add(await http.MultipartFile.fromPath('file', file.path));
+
+  //       final streamedResponse = await request.send();
+  //       final response = await http.Response.fromStream(streamedResponse);
+  //       if (response.statusCode == 200) {
+  //         print("✅ Extracted invoice");
+  //         final Map<String, dynamic> responseData = jsonDecode(response.body);
+  //         final String documentType = responseData['document_type'];
+  //         if(documentType == 'invoice'){
+  //           final List<dynamic> tableData = responseData['line_items'];
+  //           final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
+  //           setState(() {
+  //             invoiceDetails = invoiceDetailsInner;
+  //             transactionCurrency = invoiceDetailsInner['currency'];
+  //             currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
+  //             if(invoiceDetailsInner['customer_name'] =='Cash' || invoiceDetailsInner['customer_name'] ==''){
+  //               selectedCustomer.clear();
+  //             }else{
+  //               selectedCustomer.add({
+  //                 'customerName': invoiceDetailsInner['customer_name'],
+  //                 'customerVAT': invoiceDetailsInner['buyer_vat'],
+  //                 'customerTIN': invoiceDetailsInner['buyer_tin'],
+  //                 //'customerAddress': invoiceDetailsInner['customerAddress'] ?? 'Unknown',
+  //                 'customerPhone': invoiceDetailsInner['phone'],
+  //                 'customerEmail': invoiceDetailsInner['email'],
+  //               });
+  //             }
+  //           });
+  //           print(tableData);
+  //           print("adding items");
+  //           await addItem(tableData);
+  //           print("done with adding items");
+  //           await generateFiscalJSON();
+  //           await submitReceipt();
+  //           //await stampInvoice(pdfFile: file, dayNo: currentDayNo.toString(), receiptGlobalNo: currentReceiptGlobalNo.toString(), signature: currentUrl.toString());
+  //           final destPath = path.join(signedFolder.path, path.basename(file.path));
+  //           await file.rename(destPath);
+  //           print("📁 Moved to Signed: ${path.basename(destPath)}");
+  //         }
+  //         else if(documentType == 'credit_note'){
+  //           final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
+  //           final List<dynamic> tableData = responseData['line_items'];
+  //           currentInvoiceNumber = creditNoteDetails['credit_note_number'];
+  //           final String reference = creditNoteDetails['reference_number'] ;
+  //           final String reason  = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
+  //           setState(() {
+  //             creditReason = reason;
+  //             creditedInvoice = reference;
+  //           });
+
+  //           await generateCreditFiscalJSON();
+  //           final destPath = path.join(signedFolder.path, path.basename(file.path));
+  //           await file.rename(destPath);
+  //           print("📁 Moved to Signed: ${path.basename(destPath)}");
+  //         }
+  //       } else {
+  //         print("❌ Server Error: ${response.statusCode}");
+  //       }
+  //     } catch (e) {
+  //       print("❌ Exception: $e");
+  //     } finally {
+  //       isProcessing = false;
+  //     }
+  //   }
+    
+  // }
+
+  ////==========================UPDATED PROCESS NEXT ===================================================////
+  ///
   Future<void> processNext() async {
     print("🚦 processNext called | isProcessing: $isProcessing | queue: ${pendingFiles.length}");
     if (!isRunning || isProcessing || pendingFiles.isEmpty) return;
 
-    receiptItems.clear();
-    // final files = inputFolder
-    //     .listSync()
-    //     .whereType<File>()
-    //     .where((f) => f.path.toLowerCase().endsWith('.pdf'))
-    //     .where((f) => !pendingFiles.any((queued) => queued.path == f.path))
-    //     .toList();
-
-    // if (files.isEmpty) {
-    //   print("📭 No more PDFs to process.");
-    //   return;
-    // }
     isProcessing = true;
     final file = pendingFiles.removeFirst();
+    receiptItems.clear();
+
     print("📤 Uploading: ${path.basename(file.path)}");
 
-    if(isReceipt == 1){
-      try {
-        final uri = Uri.parse("http://localhost:5000/extract_receipt");
-        final request = http.MultipartRequest('POST', uri)
-          ..files.add(await http.MultipartFile.fromPath('file', file.path));
+    try {
+      final uri = Uri.parse(
+        isReceipt == 1
+            ? "http://localhost:5000/extract_receipt"
+            : "http://localhost:5000/extract_invoice"
+      );
 
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
-        if (response.statusCode == 200) {
-          print("✅ Extracted receipt");
-          final Map<String, dynamic> responseData = jsonDecode(response.body);
-          final String documentType = responseData['document_type'];
-          if(documentType == 'receipt'){
+      final request = http.MultipartRequest('POST', uri)
+        ..files.add(await http.MultipartFile.fromPath('file', file.path));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final String documentType = responseData['document_type'];
+
+        if (isReceipt == 1) {
+          if (documentType == 'receipt') {
             final List<dynamic> tableData = responseData['line_items'];
             final Map<String, dynamic> customerDetails = responseData['customer_details'];
-            final Map<String , dynamic> totals = responseData['totals'];
+            final Map<String, dynamic> totals = responseData['totals'];
             final buyerAddress = customerDetails['buyerAddress'];
+
             setState(() {
-              //invoiceDetails = invoiceDetailsInner;
               currentInvoiceSubtotal = totals['invoice_subtotal'];
               receipttotalVat = totals['total_vat'];
               transactionCurrency = responseData['invoice_currency'];
               currentInvoiceNumber = responseData['invoice_number'];
               receiptinvoiceTotal = totals['invoice_total'];
-              paid  = totals['paid'];
+              paid = totals['paid'];
               change = totals['change'];
-              if(customerDetails['name'] =='Cash' ||  customerDetails['name'] == null ){
+
+              if (customerDetails['name'] == 'Cash' || customerDetails['name'] == null) {
                 selectedCustomer.clear();
-              }else{
+              } else {
                 selectedCustomer.add({
                   'customerName': customerDetails['name'],
                   'customerVAT': customerDetails['vat_number'],
                   'customerTIN': customerDetails['tin'],
-                  //'customerAddress': customerDetails['address'] ?? 'Unknown',
                   'customerPhone': customerDetails['phone'],
-                  'customerEmail': customerDetails['email'] != "null" ? customerDetails['email'] : 'noemail@email.com',
-                  'houseNO' : buyerAddress['houseNo'],
+                  'customerEmail': customerDetails['email'] != "null"
+                      ? customerDetails['email']
+                      : 'noemail@email.com',
+                  'houseNO': buyerAddress['houseNo'],
                   'street': buyerAddress['street'],
                   'province': buyerAddress['province'],
                   'city': buyerAddress['city']
                 });
               }
             });
-            print(tableData);
+
             print("adding items");
             await addReceiptItem(tableData);
             print("done with adding items");
+
             await generateFiscalJSON();
             await submitReceipt();
-            //await stampInvoice(pdfFile: file, dayNo: currentDayNo.toString(), receiptGlobalNo: currentReceiptGlobalNo.toString(), signature: currentUrl.toString());
+
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
-          }
-          else if(documentType == 'credit_note'){
+
+          } else if (documentType == 'credit_note') {
             isReceiptCreditNote = 1;
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];
+            final Map<String, dynamic> totals = responseData['totals'];
+            final String reference = creditNoteDetails['reference_number'];
+            final String reason = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
+
             currentInvoiceNumber = creditNoteDetails['credit_note_number'];
-            final String reference = creditNoteDetails['reference_number'] ;
-            final String reason  = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
-            final Map<String , dynamic> totals = responseData['totals'];
+
             setState(() {
               creditReason = reason;
               creditedInvoice = reference;
               receiptinvoiceTotal = totals['invoice_total'];
               currentInvoiceSubtotal = totals['invoice_subtotal'];
               receipttotalVat = totals['total_vat'];
-              paid  = totals['paid'];
+              paid = totals['paid'];
             });
+
             await generateCreditFiscalJSON();
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
           }
-        } else {
-          print("❌ Server Error: ${response.statusCode}");
-        }
-      } catch (e) {
-        print("❌ Exception: $e");
-      } finally {
-        isProcessing = false;
-      }
-    }else{
-      try {
-        final uri = Uri.parse("http://localhost:5000/extract_invoice");
-        final request = http.MultipartRequest('POST', uri)
-          ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
-        if (response.statusCode == 200) {
-          print("✅ Extracted invoice");
-          final Map<String, dynamic> responseData = jsonDecode(response.body);
-          final String documentType = responseData['document_type'];
-          if(documentType == 'invoice'){
+        } else {
+          // Invoice branch
+          if (documentType == 'invoice') {
             final List<dynamic> tableData = responseData['line_items'];
             final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
+
             setState(() {
               invoiceDetails = invoiceDetailsInner;
               transactionCurrency = invoiceDetailsInner['currency'];
               currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
-              if(invoiceDetailsInner['customer_name'] =='Cash' || invoiceDetailsInner['customer_name'] ==''){
+
+              if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
                 selectedCustomer.clear();
-              }else{
+              } else {
                 selectedCustomer.add({
                   'customerName': invoiceDetailsInner['customer_name'],
                   'customerVAT': invoiceDetailsInner['buyer_vat'],
                   'customerTIN': invoiceDetailsInner['buyer_tin'],
-                  //'customerAddress': invoiceDetailsInner['customerAddress'] ?? 'Unknown',
                   'customerPhone': invoiceDetailsInner['phone'],
                   'customerEmail': invoiceDetailsInner['email'],
                 });
               }
             });
-            print(tableData);
+
             print("adding items");
             await addItem(tableData);
             print("done with adding items");
+
             await generateFiscalJSON();
             await submitReceipt();
-            //await stampInvoice(pdfFile: file, dayNo: currentDayNo.toString(), receiptGlobalNo: currentReceiptGlobalNo.toString(), signature: currentUrl.toString());
+
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
-          }
-          else if(documentType == 'credit_note'){
+
+          } else if (documentType == 'credit_note') {
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];
+            final String reference = creditNoteDetails['reference_number'];
+            final String reason = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
+
             currentInvoiceNumber = creditNoteDetails['credit_note_number'];
-            final String reference = creditNoteDetails['reference_number'] ;
-            final String reason  = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
+
             setState(() {
               creditReason = reason;
               creditedInvoice = reference;
@@ -1974,17 +2199,18 @@ Future<String> getConfig() async {
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
           }
-        } else {
-          print("❌ Server Error: ${response.statusCode}");
         }
-      } catch (e) {
-        print("❌ Exception: $e");
-      } finally {
-        isProcessing = false;
+      } else {
+        print("❌ Server Error: ${response.statusCode}");
       }
+    } catch (e) {
+      print("❌ Exception: $e");
+    } finally {
+      isProcessing = false;
+      await processNext(); // 🔁 Continue to next file
     }
-    
   }
+
 
 
   Future<String> createCreditNote(String receiptJsonString,
@@ -2129,7 +2355,7 @@ Future<void> generateCreditFiscalJSON() async{
         ? double.parse(tax['salesAmountWithTax'])
         : tax['salesAmountWithTax'].toDouble();
       int salesAmountInCents = (SalesAmountwithTax * 100 *-1).round();
-      if(taxcode == "A"){
+      if(taxcode == "C"){
         taxesConcat += "$taxcode$taxAmountInCents$salesAmountInCents";
       }else{
         taxesConcat += "$taxcode$taxPercent$taxAmountInCents$salesAmountInCents";
@@ -2228,7 +2454,7 @@ Future<void> generateCreditFiscalJSON() async{
       String creditNoteNumber = await dbHelper.getNextCreditNoteNumber();
       if(pingResponse=="200"){
         String apiEndpointSubmitReceipt =
-          "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
+          "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
         const String deviceModelName = "Server";
         const String deviceModelVersion = "v1";  
 
@@ -2479,15 +2705,15 @@ Future<void> addItem(List<dynamic> tableData) async {
 
     final vatValue = item['Total VAT'];
     if (vatValue != null && vatValue != '-' && double.tryParse(vatValue) != null && double.parse(vatValue) > 0.0) {
-      taxID = 3;
+      taxID = 1;
       taxPercent = "15.00";
-      taxCode = "C";
+      taxCode = "A";
       itemTax = totalPrice / 1.15;
       salesAmountwithTax += totalPrice;
     } else if (vatValue == '-') {
-      taxID = 1;
+      taxID = 3;
       taxPercent = "0";
-      taxCode = "A";
+      taxCode = "C";
       itemTax = 0;
     } else {
       taxID = 2;
@@ -2549,15 +2775,15 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     final vatValue = item['vat'];
     final taxLetter = item['tax_letter'];
     if (vatValue != null && vatValue != 0.00 && taxLetter=='T' ) {
-      taxID = 3;
+      taxID = 1;
       taxPercent = "15.00";
-      taxCode = "C";
+      taxCode = "A";
       itemTax = totalPrice / 1.15;
       salesAmountwithTax += totalPrice;
     } else if (taxLetter == 'E') {
-      taxID = 1;
+      taxID = 3;
       taxPercent = "0";
-      taxCode = "A";
+      taxCode = "C";
       itemTax = 0;
     } else {
       taxID = 2;
@@ -2637,7 +2863,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     final salesAmount = (tax["salesAmountWithTax"] * 100).round().toString();
 
     // Omit taxPercent for taxCode A
-    if (taxCode == "A") {
+    if (taxCode == "C") {
       return "$taxCode$taxAmount$salesAmount";
     }
 
@@ -2677,8 +2903,13 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     setState(() {
       dayReceiptCounter = data;
     });
+    int currentGlobalNo;
     int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
-    int currentGlobalNo = latestReceiptGlobalNo + 1;
+    if(latestReceiptGlobalNo == 1){
+      currentGlobalNo = 1;
+    }else{
+      currentGlobalNo = latestReceiptGlobalNo + 1;
+    }
     String getLatestReceiptHash = await dbHelper.getLatestReceiptHash();
     if (dayReceiptCounter.isEmpty){
       String receiptString = generateReceiptString(
@@ -2761,11 +2992,11 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
   return taxGroups.values.map((tax) {
     final taxID = tax["taxID"];
     final taxCode = tax["taxCode"];
-    final isGroupA = (taxCode == "A" || taxID == 1);
+    final isGroupA = (taxCode == "C" || taxID == 3);
 
     return {
       "taxID": taxID.toString(),
-      if (!isGroupA) "taxPercent": tax["taxPercent"], // Omit if group A
+      if (!isGroupA) "taxPercent": tax["taxPercent"], // Omit if group C
       "taxCode": taxCode,
       "taxAmount": isGroupA ? "0" : tax["taxAmount"].toStringAsFixed(2),
       "salesAmountWithTax": tax["salesAmountWithTax"],
@@ -2866,6 +3097,12 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
 
     int nextInvoice = await dbHelper.getNextInvoiceId();
     int getNextReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
+    int jsonGlobalNo;
+    if(getNextReceiptGlobalNo == 1){
+      jsonGlobalNo =1;
+    }else{
+      jsonGlobalNo = getNextReceiptGlobalNo + 1;
+    }
 
     // Ensure tax calculation does not fail
     List<Map<String, dynamic>> taxes = [];
@@ -2918,7 +3155,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
           // Only add taxPercent if it's not an empty strin
         }).toList(),
         "receiptType": "FISCALINVOICE",
-        "receiptGlobalNo": getNextReceiptGlobalNo + 1,
+        "receiptGlobalNo": jsonGlobalNo,
         "receiptCurrency": transactionCurrency.toString(),
         "receiptPrintForm": "InvoiceA4",
         "receiptDate": formattedDate,
@@ -3000,9 +3237,12 @@ Future<void> generateInvoiceFromJson(Map<String , dynamic> receiptJson , String 
       'name': receipt['buyerData']?['buyerTradeName'] ?? 'Customer',
       'tin': receipt['buyerData']?['buyerTIN'] ?? '0000000000',
       'vat': receipt['buyerData']?['VATNumber'] ?? '00000000',
+      'address' : '${receipt['buyerData']?['buyerAddress']?['houseNo'] ?? '0000'} , ${receipt['buyerData']?['buyerAddress']?['street'] ?? '0000'} , ${receipt['buyerData']?['buyerAddress']?['city'] ?? '0000'} ',
+      'province' : '${receipt['buyerData']?['buyerAddress']?['province'] ?? '0000'}',
+      'email': '${receipt['buyerData']?['buyerContactS']?['email'] ?? '0000'}',
+      'phoneNo': '${receipt['buyerData']?['buyerContactS']?['phoneNo'] ?? '0000'}',
     };
     String receiptGlobalNo = receipt['receiptGlobalNo'].toString().padLeft(10, '0');
-    String deviceID = "25395";
     final receiptLines = List<Map<String, dynamic>>.from(receipt['receiptLines']);
     final receiptTaxes = List<Map<String, dynamic>>.from(receipt['receiptTaxes']);
     final receiptTotal = double.tryParse(receipt['receiptTotal'].toString()) ?? 0.0;
@@ -3025,13 +3265,22 @@ Future<void> generateInvoiceFromJson(Map<String , dynamic> receiptJson , String 
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('FISCAL TAX INVOICE', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(height: 8),
-                      pw.Text('Supplier: ${supplier['name']}'),
-                      pw.Text('TIN: ${supplier['tin']}'),
-                      pw.Text('Address: ${supplier['address']}'),
-                      pw.Text('Phone: ${supplier['phone']}'),
+                      pw.Text('$tradeName' ,style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text('TIN: $taxPayerTIN'),
+                      pw.Text('VAT: $taxPayerVatNumber'),
+                      pw.Text('Address: $taxPayerAddress'),
+                      pw.Text('Phone: $taxPayerPhone'),
                     ],
+                  ),
+                  pw.SizedBox(width: 15),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text("Verication Code:", style: pw.TextStyle(fontSize: 10)),
+                      pw.Text("Verication Code:", style: pw.TextStyle(fontSize: 10)),
+                      pw.Text("You can verify this manually at:", style: pw.TextStyle(fontSize: 10)),
+                      pw.Text("https://fdmstest.zimra.co.zw", style: pw.TextStyle(fontSize: 8, color: PdfColors.blue)),
+                    ]
                   ),
                   pw.Container(
                     width: 100,
@@ -3048,28 +3297,93 @@ Future<void> generateInvoiceFromJson(Map<String , dynamic> receiptJson , String 
                 thickness: 5,
                 color: PdfColors.blue,
               ),
+              pw.Container(
+                  alignment: pw.Alignment.center,
+                  child: pw.Text(
+                  "FISCAL TAX INVOICE",
+                  style: pw.TextStyle(fontSize:  24, fontWeight: pw.FontWeight.bold),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ) ,
+              //pw.Text('FISCAL TAX INVOICE', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.Divider(
+                thickness: 5,
+                color: PdfColors.blue,
+              ),
               pw.SizedBox(height: 8),
+              pw.Text('Buyer Data' , style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.Text('Customer: ${customer['name']}'),
               pw.Text('TIN: ${customer['tin']}'),
               pw.Text('VAT: ${customer['vat']}'),
-              pw.SizedBox(height: 12),
-              pw.Text('Invoice No: ${receipt['invoiceNo']}', style: pw.TextStyle(fontSize: 14)),
-              pw.Text('Date: ${receipt['receiptDate']}'),
+              pw.Text('Address: ${customer['address']}'),
+              pw.Text('Email: ${customer['email']}'),
+              pw.Text('Phone: ${customer['phoneNo']}'),
+              pw.Divider(
+                thickness: 2,
+                color: PdfColors.blue,
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Invoice No: ${receipt['receiptGlobalNo']}'),
+                      pw.Text('Document No: ${receipt['invoiceNo']}'),
+                      pw.Text('Serial No: $serialNo'),
+                    ]
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Fiscal Day No: ${receipt['receiptGlobalNo']}'),
+                      pw.Text('Date: ${receipt['receiptDate']}'),
+                      pw.Text('Device ID: $deviceID'),
+                    ]
+                  )
+                ]
+              ),
+              pw.Divider(
+                thickness: 2,
+                color: PdfColors.blue,
+              ),
+              // pw.Text('Invoice No: ${receipt['invoiceNo']}', style: pw.TextStyle(fontSize: 14)),
+              // pw.Text('Date: ${receipt['receiptDate']}'),
               pw.SizedBox(height: 12),
               pw.Table.fromTextArray(
-                headers: ['No.', 'Item', 'Qty', 'Unit Price', 'Tax %', 'Total'],
+                headers: ['Code', 'Item', 'Qty', 'Unit Price', 'Tax', 'Total'],
+                headerCellDecoration: pw.BoxDecoration(
+                  color: PdfColors.blue
+                ),
+                headerStyle: pw.TextStyle(color: PdfColors.white),
                 data: receiptLines.map((item) {
+                  double productUnitPrice = double.tryParse(item['receiptLinePrice']) ?? 0.0;
+                  final double productVat;
+                  final double producttax;
+                  final double totalAmount = double.tryParse(item['receiptLineTotal'].toString()) ?? 0.0;
+                  if(item['taxCode'] == 'B'){
+                    productVat = 0.00;
+                  } else if(item['taxCode'] == 'A'){
+                    productVat = productUnitPrice - (productUnitPrice/1.15);
+                    productUnitPrice = productUnitPrice/1.15;
+                  }else{
+                    productVat = 0.01;
+                  }
                   return [
-                    item['receiptLineNo'],
+                    item['receiptLineHSCode'],
                     item['receiptLineName'],
                     item['receiptLineQuantity'].toString(),
                     '\$${item['receiptLinePrice'].toString()}',
-                    '${item['taxPercent'] ?? '0'}%',
+                    '${productVat == 0.01 ? '-' :productVat }',
                     '\$${item['receiptLineTotal'].toString()}',
                   ];
                 }).toList(),
               ),
-              pw.Divider(),
+              pw.SizedBox(height: 20),
+              pw.Divider(
+                thickness: 5,
+                color: PdfColors.blue,
+              ),
               pw.SizedBox(height: 10),
               pw.Align(
                 alignment: pw.Alignment.centerRight,
@@ -3081,13 +3395,11 @@ Future<void> generateInvoiceFromJson(Map<String , dynamic> receiptJson , String 
                   ],
                 ),
               ),
+              pw.Divider(
+                thickness: 5,
+                color: PdfColors.blue,
+              ),
               pw.SizedBox(height: 20),
-              pw.Text('Signature Hash:', style: pw.TextStyle(fontSize: 10)),
-              pw.Text(receipt['receiptDeviceSignature']?['hash'] ?? '', style: pw.TextStyle(fontSize: 8)),
-              pw.Text("You can verify this manually at:", style: pw.TextStyle(fontSize: 10)),
-              pw.Text("https://fdmstest.zimra.co.zw", style: pw.TextStyle(fontSize: 8, color: PdfColors.blue)),
-              pw.Text("Device ID: $deviceID", style: pw.TextStyle(fontSize: 10)),
-              pw.Text("Receipt Global No: $receiptGlobalNo", style: pw.TextStyle(fontSize: 10)),
             ],
           );
         },
@@ -3142,7 +3454,22 @@ Future<void> submitReceipt() async {
       DateTime formattedDate = DateTime.parse(parseDate);
       String formattedDateStr = DateFormat("ddMMyyyy").format(formattedDate);
       int latestReceiptGlobalNo = await db.getLatestReceiptGlobalNo();
-      
+      final receiptTaxes = jsonData['receipt']?['receiptTaxes'];
+      double total15VAT = 0.0;
+      double totalNonVAT = 0.0;
+      double totalExempt = 0.0;
+      for (var item in receiptTaxes ){
+        final taxCode = item['taxCode']?.toString() ?? 'Unknown';
+        final sales = item['SalesAmountwithTax'];
+        final salesAmount = (sales is num) ? sales.toDouble() : double.tryParse(sales.toString()) ?? 0.0;
+        if(taxCode == 'A'){
+          total15VAT += salesAmount;
+        }else if(taxCode == 'B'){
+          totalNonVAT += salesAmount;
+        }else{
+          totalExempt += salesAmount;
+        }
+      }
       int currentGlobalNo = latestReceiptGlobalNo + 1;
       String formatedReceiptGlobalNo = currentGlobalNo.toString().padLeft(10, '0');
       String receiptDeviceSignatureSignatureHex= receiptDeviceSignature_signature_hex.toString();
@@ -3159,7 +3486,7 @@ Future<void> submitReceipt() async {
       
     if(pingResponse=="200"){
       String apiEndpointSubmitReceipt =
-      "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
+      "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
       const String deviceModelName = "Server";
       const String deviceModelVersion = "v1";  
 
@@ -3216,9 +3543,9 @@ Future<void> submitReceipt() async {
             'qrurl': qrurl,
             'receiptServerSignature': responseBody['receiptServerSignature']?['signature'].toString() ?? "",
             'submitReceiptServerresponseJSON': "$submitReceiptServerresponseJson" ?? "noresponse",
-            'Total15VAT': '0.0',
-            'TotalNonVAT': 0.0,
-            'TotalExempt': 0.0,
+            'Total15VAT': total15VAT.toString(),
+            'TotalNonVAT': totalNonVAT,
+            'TotalExempt': totalExempt,
             'TotalWT': 0.0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
@@ -3271,9 +3598,9 @@ Future<void> submitReceipt() async {
             'qrurl': qrurl,
             'receiptServerSignature':"",
             'submitReceiptServerresponseJSON':"noresponse",
-            'Total15VAT': '0.0',
-            'TotalNonVAT': 0.0,
-            'TotalExempt': 0.0,
+            'Total15VAT': total15VAT.toString(),
+            'TotalNonVAT': totalNonVAT,
+            'TotalExempt': totalExempt,
             'TotalWT': 0.0,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
@@ -3283,14 +3610,14 @@ Future<void> submitReceipt() async {
          handleReceiptPrint(jsonData, qrurl, receiptQrData);
          //print58mmAdvanced(jsonData, qrurl);
          receiptItems.clear();
-        totalAmount = 0.0;
-        taxAmount = 0.0;
-        currentReceiptGlobalNo = "";
-        currentUrl = "";
-        currentDayNo = "";
-        selectedCustomer.clear();
-         receiptItems.clear();
-         isReceiptCreditNote =0;
+          totalAmount = 0.0;
+          taxAmount = 0.0;
+          currentReceiptGlobalNo = "";
+          currentUrl = "";
+          currentDayNo = "";
+          selectedCustomer.clear();
+          receiptItems.clear();
+          isReceiptCreditNote =0;
       } catch (e) {
         Get.snackbar("Db Error",
           "$e",
@@ -3335,15 +3662,21 @@ Future<void> submitReceipt() async {
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
-         print("Data inserted successfully!");
-         totalAmount = 0.0;
-          taxAmount = 0.0;
-         generateInvoiceFromJson(jsonData, qrurl);
-         handleReceiptPrint(jsonData, qrurl,receiptQrData);
-         
+        print("Data inserted successfully!");
+        totalAmount = 0.0;
+        taxAmount = 0.0;
+        generateInvoiceFromJson(jsonData, qrurl);
+        handleReceiptPrint(jsonData, qrurl,receiptQrData);
+        totalAmount = 0.0;
+        taxAmount = 0.0;
+        currentReceiptGlobalNo = "";
+        currentUrl = "";
+        currentDayNo = "";
+        selectedCustomer.clear();
+        isReceiptCreditNote =0;
          //print58mmAdvanced(jsonData, qrurl);
-         receiptItems.clear();
-         isReceiptCreditNote =0;
+        receiptItems.clear();
+        isReceiptCreditNote =0;
       } catch (e) {
         Get.snackbar("DB error Error",
           "$e",
@@ -3369,6 +3702,88 @@ Future<void> submitReceipt() async {
       taxPayerPhone = data[0]['taxPayerPhone'];
     });
   }
+
+  final databaseName1 = "pulse.db";
+
+ Future<void> loadBackupSQLFileWithPicker(Database db) async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['sql'],
+    );
+
+    if (result == null || result.files.single.path == null) {
+      print("❌ No file selected.");
+      return;
+    }
+
+    final sqlFilePath = result.files.single.path!;
+    final file = File(sqlFilePath);
+
+    if (!await file.exists()) {
+      print("❌ Selected file not found.");
+      return;
+    }
+
+    final sqlContent = await file.readAsString();
+
+    // 🔍 Split and clean the SQL file
+    final rawStatements = sqlContent
+        .split(';')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    print("📦 Executing ${rawStatements.length} SQL statements...");
+
+    for (final stmt in rawStatements) {
+      final stmtTrimmed = stmt.trimLeft();
+      final stmtLower = stmtTrimmed.toLowerCase();
+
+      // Skip schema/control statements
+      if (stmtTrimmed.startsWith('--') ||
+          stmtLower.startsWith('begin') ||
+          stmtLower.startsWith('commit') ||
+          stmtLower.startsWith('create table') ||
+          stmtLower.startsWith('drop table')) {
+        print("⚠️ Skipping schema/control statement: $stmtTrimmed");
+        continue;
+      }
+
+      try {
+        // Force 'INSERT INTO' to become 'INSERT OR REPLACE INTO'
+        String cleanStmt;
+        if (stmtLower.startsWith('insert into')) {
+          // Slice after "insert into" (length = 11)
+          cleanStmt = 'INSERT OR REPLACE INTO' + stmtTrimmed.substring(11);
+        } else {
+          cleanStmt = stmtTrimmed;
+        }
+
+        await db.execute(cleanStmt);
+      } catch (e) {
+        print("🧨 Error executing: $stmt");
+        print("   👉 $e");
+      }
+    }
+
+    print("✅ Backup loaded successfully.");
+  } catch (e) {
+    print("❌ Exception during backup restore: $e");
+  }
+}
+
+
+
+  void restoreBackup() async {
+    final databasePath = await databaseFactoryFfi.getDatabasesPath();
+    final fullPath = path.join(databasePath, databaseName1);
+    final db = await openDatabase(fullPath);
+
+    await loadBackupSQLFileWithPicker(db);
+  }
+
+
 
   @override
   void dispose() {
@@ -3629,7 +4044,7 @@ Future<void> submitReceipt() async {
                                   }
                   
                                   String apiEndpointCloseDay =
-                                    "https://fdmsapitest.zimra.co.zw/Device/v1/$deviceID/CloseDay";
+                                    "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/CloseDay";
                                   const String deviceModelName = "Server";
                                   const String deviceModelVersion = "v1";  
                   
@@ -3710,7 +4125,7 @@ Future<void> submitReceipt() async {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.business),
-                    title:const Text('Company Details'),
+                    title:const Text('Company Settings'),
                     onTap: () {
                       Get.to(()=> const CompanydetailsPage());
                       // handle tap
@@ -3729,6 +4144,22 @@ Future<void> submitReceipt() async {
                     onTap: () {
                       Get.to(()=> const Submittedreceipts());
                       // handle tap
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.data_thresholding_sharp),
+                    title: const Text('Reporting'),
+                    onTap: () => Get.to(()=> const FiscalreportsPage()),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.print),
+                    title: const Text('Print Fiscal Day Z Report'),
+                    onTap: (){
+                      try {
+                        handleZReportPrint();
+                      } catch (e) {
+                        Get.snackbar("Z Report Printing Error", "$e" , snackPosition: SnackPosition.TOP, backgroundColor: Colors.red , colorText: Colors.white );
+                      }
                     },
                   ),
                   ListTile(
@@ -3776,23 +4207,14 @@ Future<void> submitReceipt() async {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.data_thresholding_sharp),
-                    title: const Text('Reporting'),
-                    onTap: () => Get.to(()=> const FiscalreportsPage()),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.data_thresholding_sharp),
-                    title: const Text('Print Fiscal Day Z Report'),
+                    leading: const Icon(Icons.refresh_sharp),
+                    title: const Text('Load Data Back File'),
                     onTap: (){
-                      try {
-                        handleZReportPrint();
-                      } catch (e) {
-                        Get.snackbar("Z Report Printing Error", "$e" , snackPosition: SnackPosition.TOP, backgroundColor: Colors.red , colorText: Colors.white );
-                      }
+                      restoreBackup();
                     },
                   ),
                    ListTile(
-                    leading: const Icon(Icons.data_thresholding_sharp),
+                    leading: const Icon(Icons.delete),
                     title: const Text('Clear Data'),
                     onTap: ()async {
                       try {
@@ -3918,7 +4340,7 @@ class FiscalDayCounter {
     if (type == 'BalanceByMoneyType') {
       if(value == 0.0) return ''; // skip zero balances
       buf.write(moneyType!.toUpperCase());
-    } else if (taxID != 1 && percent != null) {
+    } else if (taxID != 3 && percent != null) {
       buf.write(percent!.toStringAsFixed(2));
     }
 
@@ -3965,11 +4387,11 @@ Future<(
       final taxAmt = rawTaxAmt is num ? rawTaxAmt.toDouble() : double.tryParse(rawTaxAmt.toString()) ?? 0;
       final salesAmt = rawSales is num ? rawSales.toDouble() : double.tryParse(rawSales.toString()) ?? 0;
       final taxCode = t['taxCode'];
-      final perc = (taxCode == "A") ? 0.0 : double.parse(t['taxPercent'] as String);
+      final perc = (taxCode == "C") ? 0.0 : double.parse(t['taxPercent'] as String);
       final taxId = int.parse(t['taxID'].toString());
 
       if (!isCredit) {
-        if (taxCode == "A") {
+        if (taxCode == "C") {
           final sbtKey = 'SaleByTax|$curr|${perc.toStringAsFixed(2)}|$taxId';
           invMap.putIfAbsent(sbtKey, () => FiscalDayCounter(
             type: 'SaleByTax', currency: curr, taxID: taxId))
@@ -3991,7 +4413,7 @@ Future<(
             .accumulate(taxAmt);
         }
       } else {
-        if (taxCode == "A") {
+        if (taxCode == "C") {
           final cbtKey = 'CreditNoteByTax|$curr|${perc.toStringAsFixed(2)}|$taxId';
           crdMap.putIfAbsent(cbtKey, () => FiscalDayCounter(
             type: 'CreditNoteByTax', currency: curr, taxID: taxId))
@@ -4131,7 +4553,7 @@ class DatabaseBackupService{
     }
   }
 
-  // Method 2: Export as SQL statements
+  // Method 2: Export as SQL statements first code
   Future<String?> exportDatabaseAsSQL(Database database) async {
     try {
       // Get all table names
@@ -4221,6 +4643,86 @@ class DatabaseBackupService{
       return null;
     }
   }
+
+
+  ///back no schema
+  // Future<String?> exportDatabaseAsSQL(Database database) async {
+  //   try {
+  //     // Get all table names
+  //     List<Map<String, dynamic>> tables = await database.rawQuery(
+  //       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+  //     );
+
+  //     StringBuffer sqlBuffer = StringBuffer();
+  //     sqlBuffer.writeln('-- Database Data Backup Only');
+  //     sqlBuffer.writeln('-- Generated: ${DateTime.now()}');
+  //     sqlBuffer.writeln('-- Begin Transaction');
+  //     sqlBuffer.writeln('BEGIN TRANSACTION;');
+  //     sqlBuffer.writeln();
+
+  //     for (Map<String, dynamic> table in tables) {
+  //       String tableName = table['name'];
+
+  //       // Fetch table data
+  //       List<Map<String, dynamic>> rows = await database.query(tableName);
+
+  //       if (rows.isNotEmpty) {
+  //         // Get column names
+  //         List<String> columns = rows[0].keys.toList();
+  //         String columnsList = columns.join(', ');
+
+  //         sqlBuffer.writeln('-- Data for table: $tableName');
+
+  //         for (Map<String, dynamic> row in rows) {
+  //           List<String> values = [];
+  //           for (String column in columns) {
+  //             dynamic value = row[column];
+  //             if (value == null) {
+  //               values.add('NULL');
+  //             } else if (value is String) {
+  //               String escapedValue = value.replaceAll("'", "''");
+  //               values.add("'$escapedValue'");
+  //             } else {
+  //               values.add(value.toString());
+  //             }
+  //           }
+
+  //           String valuesList = values.join(', ');
+  //           sqlBuffer.writeln('INSERT INTO $tableName ($columnsList) VALUES ($valuesList);');
+  //         }
+  //         sqlBuffer.writeln();
+  //       }
+  //     }
+
+  //     sqlBuffer.writeln('-- End Transaction');
+  //     sqlBuffer.writeln('COMMIT;');
+
+  //     // Save backup
+  //     String backupDir = 'C:/Fiscal/Configurations/DatabaseBackups';
+  //     await Directory(backupDir).create(recursive: true);
+
+  //     String timestamp = DateTime.now().toIso8601String().replaceAll(':', '_');
+  //     String backupPath = '$backupDir/backup_data_only_$timestamp.sql';
+
+  //     File backupFile = File(backupPath);
+  //     await backupFile.writeAsString(sqlBuffer.toString());
+
+  //     print('✅ Data-only SQL backup created: $backupPath');
+  //     return backupPath;
+      
+  //   } catch (e) {
+  //     Get.snackbar(
+  //       "Error Creating SQL Backup", 
+  //       "$e",
+  //       snackPosition: SnackPosition.TOP,
+  //       colorText: Colors.white,
+  //       backgroundColor: Colors.red,
+  //       icon: const Icon(Icons.error, color: Colors.white),
+  //     );
+  //     return null;
+  //   }
+  // }
+
 
   Future<bool> requestStoragePermission() async {
     if (Platform.isAndroid) {

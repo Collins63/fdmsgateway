@@ -221,6 +221,9 @@ class _FiscalreportsPageState extends State<FiscalreportsPage> {
                             selectedCurrency = value;
                           });
                           await updateTaxTotal();
+                          await updateTotalNonVATSales();
+                          await updateTotalVATSales();
+                          await updateTotalZeroVATSales();
                         },
                         items: currencies.map((currency) {
                           return DropdownMenuItem<String>(

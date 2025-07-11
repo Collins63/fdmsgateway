@@ -540,6 +540,16 @@ Future<Database> initDB() async {
       );
     }
 
+    Future<void> updateFiscalDay(int dayNo , String closeDate) async{
+      final db = await initDB();
+      await db.update(
+        'openDay',
+        {'FiscalDayClosed': closeDate},
+        where: 'FiscalDayNo = ?',
+        whereArgs: [dayNo]
+      );
+    }
+
     ////UPdate stock purchase quantity
     Future<void> updateStockPurchaseQty(int purchaseId , int newStockQty) async{
       final db = await initDB();

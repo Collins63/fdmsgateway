@@ -18,6 +18,7 @@ import 'package:fdmsgateway/forms/fiscalReports.dart';
 import 'package:fdmsgateway/signatureGeneration.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -420,6 +422,18 @@ Future<String> getConfig() async {
       );
     return response;
   }
+
+  String dayOpened = '';
+  
+  Future<void> getopendayData() async {
+    final dayData = await dbHelper.getDayOpenedDate(currentFiscal);
+    String dayOpened1 = dayData[0]['FiscalDayOpened'];
+    print(dayOpened1);
+    setState(() {
+      dayOpened = dayOpened1;
+    });
+  }
+
   Future<String> submitUnsubmittedReceipts(DatabaseHelper dbHelper) async {
   String sql = "SELECT * FROM submittedReceipts WHERE StatustoFDMS = 'NotSubmitted'";
   int resubmittedCount = 0;
@@ -775,10 +789,11 @@ Future<String> getConfig() async {
 
     final pdf = pw.Document();
     pdf.addPage(
-      pw.Page(
-        pageFormat:const PdfPageFormat(80 * PdfPageFormat.mm, double.infinity),
-        build: (pw.Context context){
-          return pw.Column(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, PdfPageFormat.a4.height), // Or set custom height
+        maxPages: 100,
+        build: (pw.Context context) => [
+          pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Container(
@@ -850,7 +865,7 @@ Future<String> getConfig() async {
               pw.Text("Fiscal Day No: $currentFiscal",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Fiscal Day Opened:",
+              pw.Text("Fiscal Day Opened: $dayOpened",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
               pw.Text("Device Serial No: $serialNo",
@@ -874,46 +889,50 @@ Future<String> getConfig() async {
               pw.Text("ZWG",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL NET SALES",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
-              pw.Text("Net , VAT 15%: $NetVAT15TotalZWG",
+              pw.Text("Net , VAT 15%: ${NetVAT15TotalZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Net , Non-VAT 0%: $NetNonVATTotalZWG",
+              pw.Text("Net , Non-VAT 0%: ${NetNonVATTotalZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Net , Exempt: $NetExemptTotalZWG",
+              pw.Text("Net , Exempt: ${NetExemptTotalZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total Net Amount: $NetTotalZWG",
+              pw.Text("Total Net Amount: ${NetTotalZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL TAXES",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
-              pw.Text("Tax , VAT 15 %: $TaxVAT15ZWG",
+              pw.Text("Tax , VAT 15 %: ${TaxVAT15ZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total tax amount: $TaxTotalZWG",
+              pw.Text("Total tax amount: ${TaxTotalZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL GROSS SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Total , VAT 15 %: ${GrossTotalVAT15ZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , VAT 15 %: $GrossTotalVAT15ZWG",
+              pw.Text("Total , Non-VAT 0 %: ${GrossTotalNonVATZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , Non-VAT 0 %: $GrossTotalNonVATZWG",
+              pw.Text("Total , Exempt: ${GrossTotalExemptZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , Exempt: $GrossTotalExemptZWG",
+              pw.Text("Total gross amount: ${GrossTotalZWG.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total gross amount: $GrossTotalZWG",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
-              ),
-              pw.Text("Documents               Quantity                Total Amount", 
+              pw.SizedBox(height: 20),
+              pw.Text("Documents               Quantity                Total", 
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)
               ),
               pw.Row(
@@ -921,7 +940,7 @@ Future<String> getConfig() async {
                 children: [
                   // Quantity (tight width)
                   pw.SizedBox(
-                    width: 25,
+                    width: 40,
                     child: pw.Text(
                       "Invoices",
                       style: pw.TextStyle(fontSize: 8),
@@ -929,7 +948,7 @@ Future<String> getConfig() async {
                     ),
                   ),
                   // Small space
-                  pw.SizedBox(width: 15),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
                     width: 40,
                     child: pw.Text(
@@ -938,9 +957,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width:35),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       InvoicesTotalAmountZWG.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -953,7 +972,7 @@ Future<String> getConfig() async {
                 mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
                   pw.SizedBox(
-                    width: 25,
+                    width: 60,
                     child: pw.Text(
                       "Credit notes",
                       style: pw.TextStyle(fontSize: 8),
@@ -971,9 +990,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       CreditNotesTotalAmountZWG.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -986,7 +1005,7 @@ Future<String> getConfig() async {
                 mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
                   pw.SizedBox(
-                    width: 25,
+                    width: 70,
                     child: pw.Text(
                       "Total documents",
                       style: pw.TextStyle(fontSize: 8),
@@ -994,7 +1013,7 @@ Future<String> getConfig() async {
                     ),
                   ),
                   // Small space
-                  pw.SizedBox(width: 15),
+                  pw.SizedBox(width: 10),
 
                   pw.SizedBox(
                     width: 40,
@@ -1004,9 +1023,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 30),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       TotalDocumentsTotalAmountZWG.toString(),
                       style: pw.TextStyle(fontSize: 8),
@@ -1019,46 +1038,50 @@ Future<String> getConfig() async {
               pw.Text("USD",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL NET SALES",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
-              pw.Text("Net , VAT 15%: $NetVAT15TotalUSD",
+              pw.Text("Net , VAT 15%: ${NetVAT15TotalUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Net , Non-VAT 0%: $NetNonVATTotalUSD",
+              pw.Text("Net , Non-VAT 0%: ${NetNonVATTotalUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Net , Exempt: $NetExemptTotalUSD",
+              pw.Text("Net , Exempt: ${NetExemptTotalUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total Net Amount: $NetTotalUSD",
+              pw.Text("Total Net Amount: ${NetTotalUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL TAXES",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
-              pw.Text("Tax , VAT 15 %: $TaxVAT15USD",
+              pw.Text("Tax , VAT 15 %: ${TaxVAT15USD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total tax amount: $TaxTotalUSD",
+              pw.Text("Total tax amount: ${TaxTotalUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL GROSS SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+                pw.Text("Total , VAT 15 %: ${GrossTotalVAT15USD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , VAT 15 %: $GrossTotalVAT15USD",
+              pw.Text("Total , Non-VAT 0 %: ${GrossTotalNonVATUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , Non-VAT 0 %: $GrossTotalNonVATUSD",
+              pw.Text("Total , Exempt: ${GrossTotalExemptUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , Exempt: $GrossTotalExemptUSD",
+              pw.Text("Total gross amount: ${GrossTotalUSD.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total gross amount: $GrossTotalUSD",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
-              ),
-              pw.Text("Documents               Quantity                Total Amount", 
+              pw.SizedBox(height: 20),
+              pw.Text("Documents               Quantity                Total", 
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)
               ),
               pw.Row(
@@ -1066,7 +1089,7 @@ Future<String> getConfig() async {
                 children: [
                   // Quantity (tight width)
                   pw.SizedBox(
-                    width: 25,
+                    width: 40,
                     child: pw.Text(
                       "Invoices",
                       style: pw.TextStyle(fontSize: 8),
@@ -1074,7 +1097,7 @@ Future<String> getConfig() async {
                     ),
                   ),
                   // Small space
-                  pw.SizedBox(width: 15),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
                     width: 40,
                     child: pw.Text(
@@ -1083,9 +1106,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       InvoicesTotalAmountUSD.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -1098,7 +1121,7 @@ Future<String> getConfig() async {
                 mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
                   pw.SizedBox(
-                    width: 25,
+                    width: 60,
                     child: pw.Text(
                       "Credit notes",
                       style: pw.TextStyle(fontSize: 8),
@@ -1116,9 +1139,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       CreditNotesTotalAmountUSD.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -1131,7 +1154,7 @@ Future<String> getConfig() async {
                 mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
                   pw.SizedBox(
-                    width: 25,
+                    width: 70,
                     child: pw.Text(
                       "Total documents",
                       style: pw.TextStyle(fontSize: 8),
@@ -1139,7 +1162,7 @@ Future<String> getConfig() async {
                     ),
                   ),
                   // Small space
-                  pw.SizedBox(width: 15),
+                  pw.SizedBox(width: 10),
 
                   pw.SizedBox(
                     width: 40,
@@ -1149,9 +1172,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 30),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       TotalDocumentsTotalAmountUSD.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -1164,45 +1187,49 @@ Future<String> getConfig() async {
               pw.Text("ZAR",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL NET SALES",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
-              pw.Text("Net , VAT 15%: $NetVAT15TotalZAR",
+              pw.Text("Net , VAT 15%: ${NetVAT15TotalZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Net , Non-VAT 0%: $NetNonVATTotalZAR",
+              pw.Text("Net , Non-VAT 0%: ${NetNonVATTotalZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Net , Exempt: $NetExemptTotalZAR",
+              pw.Text("Net , Exempt: ${NetExemptTotalZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total Net Amount: $NetTotalZAR",
+              pw.Text("Total Net Amount: ${NetTotalZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL TAXES",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
               ),
-              pw.Text("Tax , VAT 15 %: $TaxVAT15ZAR",
+              pw.Text("Tax , VAT 15 %: ${TaxVAT15ZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total tax amount: $TaxTotalZAR",
+              pw.Text("Total tax amount: ${TaxTotalZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
+              pw.SizedBox(height: 20),
               pw.Text("TOTAL GROSS SALES",
+                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold)
+              ),
+              pw.Text("Total , VAT 15 %: ${GrossTotalVAT15ZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , VAT 15 %: $GrossTotalVAT15ZAR",
+              pw.Text("Total , Non-VAT 0 %: ${GrossTotalNonVATZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , Non-VAT 0 %: $GrossTotalNonVATZAR",
+              pw.Text("Total , Exempt: ${GrossTotalExemptZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total , Exempt: $GrossTotalExemptZAR",
+              pw.Text("Total gross amount: ${GrossTotalZAR.toStringAsFixed(2)}",
                 style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
               ),
-              pw.Text("Total gross amount: $GrossTotalZAR",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)
-              ),
+              pw.SizedBox(height: 20),
               pw.Text("Documents               Quantity                Total Amount", 
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)
               ),
@@ -1211,7 +1238,7 @@ Future<String> getConfig() async {
                 children: [
                   // Quantity (tight width)
                   pw.SizedBox(
-                    width: 25,
+                    width: 40,
                     child: pw.Text(
                       "Invoices",
                       style: pw.TextStyle(fontSize: 8),
@@ -1219,7 +1246,7 @@ Future<String> getConfig() async {
                     ),
                   ),
                   // Small space
-                  pw.SizedBox(width: 15),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
                     width: 40,
                     child: pw.Text(
@@ -1228,9 +1255,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       InvoicesTotalAmountZAR.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -1243,7 +1270,7 @@ Future<String> getConfig() async {
                 mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
                   pw.SizedBox(
-                    width: 25,
+                    width: 60,
                     child: pw.Text(
                       "Credit notes",
                       style: pw.TextStyle(fontSize: 8),
@@ -1261,9 +1288,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 35),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       CreditNotesTotalAmountZAR.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -1276,7 +1303,7 @@ Future<String> getConfig() async {
                 mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
                   pw.SizedBox(
-                    width: 25,
+                    width: 70,
                     child: pw.Text(
                       "Total documents",
                       style: pw.TextStyle(fontSize: 8),
@@ -1284,8 +1311,7 @@ Future<String> getConfig() async {
                     ),
                   ),
                   // Small space
-                  pw.SizedBox(width: 15),
-
+                  pw.SizedBox(width: 10),
                   pw.SizedBox(
                     width: 40,
                     child: pw.Text(
@@ -1294,9 +1320,9 @@ Future<String> getConfig() async {
                       textAlign: pw.TextAlign.right,
                     ),
                   ),
-                  pw.SizedBox(width: 20),
+                  pw.SizedBox(width: 30),
                   pw.SizedBox(
-                    width: 35,
+                    width: 40,
                     child: pw.Text(
                       TotalDocumentsTotalAmountZAR.toStringAsFixed(2),
                       style: pw.TextStyle(fontSize: 8),
@@ -1306,8 +1332,8 @@ Future<String> getConfig() async {
                 ],
               ),
             ]
-          );
-        }
+          )
+        ]
       )
     );
     if (selectedPrinter != null) {
@@ -1331,10 +1357,11 @@ Future<String> getConfig() async {
 
     String formattedQrData = formatString(qrData);   
     pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity),
-        build: (pw.Context context) {
-          return pw.Column(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, PdfPageFormat.a4.height), // Or set custom height
+        maxPages: 100,
+        build: (pw.Context context) => [
+          pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Container(
@@ -1747,8 +1774,8 @@ Future<String> getConfig() async {
               ),
               pw.Text("", textAlign: pw.TextAlign.center),
             ],
-          );
-      },
+          )
+      ],
     ),
   );
 
@@ -2048,6 +2075,13 @@ Future<String> getConfig() async {
 
   ////==========================UPDATED PROCESS NEXT ===================================================////
   ///
+  ///
+  void logToFile(String message) async {
+    final logFile = File('C:/FMDS-gateway/Files/log.txt'); // or better, use app data dir
+    final timestamp = DateTime.now().toIso8601String();
+    await logFile.writeAsString('[$timestamp] $message\n', mode: FileMode.append);
+  }
+
   Future<void> processNext() async {
     print("🚦 processNext called | isProcessing: $isProcessing | queue: ${pendingFiles.length}");
     if (!isRunning || isProcessing || pendingFiles.isEmpty) return;
@@ -2382,9 +2416,17 @@ Future<void> generateCreditFiscalJSON() async{
       //receiptDeviceSignature_signature_hex = signature?[0];
       //receiptDeviceSignature_signature  = signature?[1];
       //final Map<String, String> signedDataMap  = await signData(filePath, password, finalString);
+      final byteData = await rootBundle.load('assets/private_key.pem');
+      final buffer = byteData.buffer;
+      // Write to a temp file
+      final tempDir = Directory.systemTemp;
+      final pemFile = File('${tempDir.path}/private_key.pem');
+      await pemFile.writeAsBytes(
+        buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+      );
       final Map<String, String> signedDataMap  = PemSigner.signDataWithMd5(
         data: finalString,
-        privateKeyPath: 'assets/private_key.pem',
+        privateKeyPath: pemFile.path,
       );
       //final Map<String, dynamic> signedDataMap = jsonDecode(signedDataString);
       receiptDeviceSignature_signature_hex = signedDataMap["receiptDeviceSignature_signature_hex"] ?? "";
@@ -2450,6 +2492,22 @@ Future<void> generateCreditFiscalJSON() async{
       totalSalesAmountWithTax += salesAmount;
     }
 
+    final totals = jsonData['receipt']?['receiptTaxes'];
+      double total15VAT = 0.0;
+      double totalNonVAT = 0.0;
+      double totalExempt = 0.0;
+      for (var items in totals){
+        double sum = items['salesAmountWithTax'];
+        int? taxId = int.tryParse(items['taxID']);
+        if(taxId == 1){
+          total15VAT += sum;
+        }else if(taxId == 2){
+          totalNonVAT += sum;
+        }else{
+          totalExempt += sum;
+        }
+      }
+
     if (creditNoteJson.isNotEmpty) {
       String creditNoteNumber = await dbHelper.getNextCreditNoteNumber();
       if(pingResponse=="200"){
@@ -2506,14 +2564,15 @@ Future<void> generateCreditFiscalJSON() async{
             'qrurl': qrurl,
             'receiptServerSignature': responseBody['receiptServerSignature']?['signature'].toString() ?? "",
             'submitReceiptServerresponseJSON': "$submitReceiptServerresponseJson" ?? "noresponse",
-            'Total15VAT': '0.0',
-            'TotalNonVAT': 0.0,
-            'TotalExempt': 0.0,
+            'Total15VAT': total15VAT.toString(),
+            'TotalNonVAT': totalNonVAT,
+            'TotalExempt': totalExempt,
             'TotalWT': 0.0,
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl,invoiceId);
             handleReceiptPrint(jsonData, qrurl, creditQrData);
+            
           } catch (e) {
             Get.snackbar(" Db Error",
             "$e",
@@ -2548,9 +2607,9 @@ Future<void> generateCreditFiscalJSON() async{
             'qrurl': qrurl,
             'receiptServerSignature': "",
             'submitReceiptServerresponseJSON': "noresponse",
-            'Total15VAT': '0.0',
-            'TotalNonVAT': 0.0,
-            'TotalExempt': 0.0,
+            'Total15VAT': total15VAT.toString(),
+            'TotalNonVAT': totalNonVAT,
+            'TotalExempt': totalExempt,
             'TotalWT': 0.0,
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
@@ -2592,9 +2651,9 @@ Future<void> generateCreditFiscalJSON() async{
             'qrurl': qrurl,
             'receiptServerSignature': "",
             'submitReceiptServerresponseJSON': "noresponse",
-            'Total15VAT': '0.0',
-            'TotalNonVAT': 0.0,
-            'TotalExempt': 0.0,
+            'Total15VAT': total15VAT.toString(),
+            'TotalNonVAT': totalNonVAT,
+            'TotalExempt': totalExempt,
             'TotalWT': 0.0,
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
@@ -2780,16 +2839,24 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
       taxCode = "A";
       itemTax = totalPrice / 1.15;
       salesAmountwithTax += totalPrice;
-    } else if (taxLetter == 'E') {
+    } else if (taxLetter == 'Z' && vatValue == 0.00 ) {
+      // taxID = 3;
+      // taxPercent = "0";
+      // taxCode = "C";
+      // itemTax = 0;
+      taxID =2;
+      taxPercent = "0.00";
+      taxCode = "B";
+      itemTax = 0;
+    } else {
+      // taxID = 2;
+      // taxPercent = "0.00";
+      // taxCode = "B";
+      // itemTax = totalPrice * double.parse(taxPercent);
       taxID = 3;
       taxPercent = "0";
       taxCode = "C";
       itemTax = 0;
-    } else {
-      taxID = 2;
-      taxPercent = "0.00";
-      taxCode = "B";
-      itemTax = totalPrice * double.parse(taxPercent);
     }
 
     print("adding new items");
@@ -2923,6 +2990,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
         getPreviousReceiptHash:"",
       );
       print("Concatenated Receipt String: $receiptString");
+      logToFile(receiptString);
       return receiptString;
     }else{
       String receiptString = generateReceiptString(
@@ -2936,6 +3004,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
         getPreviousReceiptHash: getLatestReceiptHash,
       );
       print("Concatenated Receipt String: $receiptString");
+      logToFile(receiptString);
       return receiptString;
     }
     
@@ -3034,6 +3103,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
         getPreviousReceiptHash:"",
       );
       print("Concatenated Receipt String:$receiptString");
+      logToFile(receiptString);
       receiptString.trim();
     }
     else{
@@ -3054,6 +3124,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     var digest = sha256.convert(bytes);
     final hash = base64.encode(digest.bytes);
     print(hash);
+    logToFile(hash);
     return hash;
   }
    
@@ -3072,9 +3143,17 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
       //List<String>? signature = await getSignatureSignature(data);
       //receiptDeviceSignature_signature_hex = signature?[0];
       //receiptDeviceSignature_signature  = signature?[1];
+      final byteData = await rootBundle.load('assets/private_key.pem');
+      final buffer = byteData.buffer;
+      // Write to a temp file
+      final tempDir = Directory.systemTemp;
+      final pemFile = File('${tempDir.path}/private_key.pem');
+      await pemFile.writeAsBytes(
+        buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+      );
       final Map<String, String> signedDataMap  = PemSigner.signDataWithMd5(
         data: data,
-        privateKeyPath: 'assets/private_key.pem',
+        privateKeyPath: pemFile.path,
       );
       //final Map<String, dynamic> signedDataMap = jsonDecode(signedDataString);
       receiptDeviceSignature_signature_hex = signedDataMap["receiptDeviceSignature_signature_hex"] ?? "";
@@ -3454,20 +3533,19 @@ Future<void> submitReceipt() async {
       DateTime formattedDate = DateTime.parse(parseDate);
       String formattedDateStr = DateFormat("ddMMyyyy").format(formattedDate);
       int latestReceiptGlobalNo = await db.getLatestReceiptGlobalNo();
-      final receiptTaxes = jsonData['receipt']?['receiptTaxes'];
+      final totals = jsonData['receipt']?['receiptTaxes'];
       double total15VAT = 0.0;
       double totalNonVAT = 0.0;
       double totalExempt = 0.0;
-      for (var item in receiptTaxes ){
-        final taxCode = item['taxCode']?.toString() ?? 'Unknown';
-        final sales = item['SalesAmountwithTax'];
-        final salesAmount = (sales is num) ? sales.toDouble() : double.tryParse(sales.toString()) ?? 0.0;
-        if(taxCode == 'A'){
-          total15VAT += salesAmount;
-        }else if(taxCode == 'B'){
-          totalNonVAT += salesAmount;
+      for (var items in totals){
+        double sum = items['salesAmountWithTax'];
+        int? taxId = int.tryParse(items['taxID']);
+        if(taxId == 1){
+          total15VAT += sum;
+        }else if(taxId == 2){
+          totalNonVAT += sum;
         }else{
-          totalExempt += salesAmount;
+          totalExempt += sum;
         }
       }
       int currentGlobalNo = latestReceiptGlobalNo + 1;
@@ -3562,6 +3640,9 @@ Future<void> submitReceipt() async {
         currentDayNo = "";
         selectedCustomer.clear();
         isReceiptCreditNote =0;
+        fetchDayReceiptCounter();
+        fetchReceiptsPending();
+        fetchReceiptsSubmitted();
       } catch (e) {
         Get.snackbar(" Db Error",
           "$e",
@@ -3609,7 +3690,7 @@ Future<void> submitReceipt() async {
          generateInvoiceFromJson(jsonData, qrurl);
          handleReceiptPrint(jsonData, qrurl, receiptQrData);
          //print58mmAdvanced(jsonData, qrurl);
-         receiptItems.clear();
+          receiptItems.clear();
           totalAmount = 0.0;
           taxAmount = 0.0;
           currentReceiptGlobalNo = "";
@@ -3618,6 +3699,9 @@ Future<void> submitReceipt() async {
           selectedCustomer.clear();
           receiptItems.clear();
           isReceiptCreditNote =0;
+          fetchDayReceiptCounter();
+          fetchReceiptsPending();
+          fetchReceiptsSubmitted();
       } catch (e) {
         Get.snackbar("Db Error",
           "$e",
@@ -3677,6 +3761,9 @@ Future<void> submitReceipt() async {
          //print58mmAdvanced(jsonData, qrurl);
         receiptItems.clear();
         isReceiptCreditNote =0;
+        fetchDayReceiptCounter();
+        fetchReceiptsPending();
+        fetchReceiptsSubmitted();
       } catch (e) {
         Get.snackbar("DB error Error",
           "$e",
@@ -3810,7 +3897,7 @@ Future<void> submitReceipt() async {
               width: 150,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/zimra.PNG'),
+                  image: AssetImage('assets/tigerwebLogo.PNG'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -4020,7 +4107,8 @@ Future<void> submitReceipt() async {
                                   final (invoices, creditNotes, balances, concatStr) =
                                     await buildFiscalDayCountersAndConcat(fiscalDay);
                                   String finalStringConcat = "$deviceID$fiscalDay$formattedDate$concatStr";
-                  
+                                  DateTime closeDate = DateTime.now();
+                                  String formattedCloseDate = DateFormat("yyyy-MM-ddTHH:mm:ss").format(closeDate);
                                   // Hash generation
                                   finalStringConcat.trim();
                   
@@ -4031,9 +4119,17 @@ Future<void> submitReceipt() async {
                   
                                   //signature generation
                                   try {
+                                    final byteData = await rootBundle.load('assets/private_key.pem');
+                                    final buffer = byteData.buffer;
+                                    // Write to a temp file
+                                    final tempDir = Directory.systemTemp;
+                                    final pemFile = File('${tempDir.path}/private_key.pem');
+                                    await pemFile.writeAsBytes(
+                                      buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+                                    );
                                     final Map<String, String> signedDataMap  = PemSigner.signDataWithMd5(
                                       data: finalStringConcat,
-                                      privateKeyPath: 'assets/private_key.pem',
+                                      privateKeyPath: pemFile.path,
                                     );
                                     //final Map<String, String> signedDataMap = await signData(filePath, password, finalStringConcat);
                                     receiptDeviceSignature_signature_hex = signedDataMap["receiptDeviceSignature_signature_hex"] ?? "";
@@ -4043,52 +4139,58 @@ Future<void> submitReceipt() async {
                                     Get.snackbar("Signing Error", "$e", snackPosition: SnackPosition.TOP);
                                   }
                   
-                                  String apiEndpointCloseDay =
+                                  try {
+                                    String apiEndpointCloseDay =
                                     "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/CloseDay";
-                                  const String deviceModelName = "Server";
-                                  const String deviceModelVersion = "v1";  
-                  
-                                  SSLContextProvider sslContextProvider = SSLContextProvider();
-                                  SecurityContext securityContext = await sslContextProvider.createSSLContext();
-                  
-                  
-                  
-                                  // JSON payload:
-                                  final payload = { 
-                                  'deviceID': deviceID,
-                                  'fiscalDayNo': fiscalDay,
-                                  'fiscalDayCounters': [
-                                    ...invoices.map((c) => c.toJson()),
-                                    ...creditNotes.map((c) => c.toJson()),
-                                    ...balances.map((c) => c.toJson()),
-                                  ],
-                                  'fiscalDayDeviceSignature': {
-                                    'hash' : hash,
-                                    'signature': receiptDeviceSignature_signature,
-                                  },
-                                  'receiptCounter': dayReceiptCounter.length,
-                                  };
-                  
-                                  Map<String , dynamic> response = await CloseDay.submitCloseDay(
-                                    apiEndpoint: apiEndpointCloseDay,
-                                    deviceModelName: deviceModelName,
-                                    deviceModelVersion: deviceModelVersion,
-                                    securityContext: securityContext,
-                                    payload: payload,
-                                  );
-                                  Get.snackbar(
-                                    "Zimra Response", "$response",
-                                    snackPosition: SnackPosition.TOP,
-                                    colorText: Colors.white,
-                                    backgroundColor: Colors.green,
-                                    icon: const Icon(Icons.message, color: Colors.white),
-                                  );
-                                  print("Response: $response");
-                                  // And your concatenated string is:
-                                  print(finalStringConcat);
-                                  print(payload); 
-                                  // File file = File("/storage/emulated/0/Pulse/Configurations/jsonFile.txt");
-                                  // await file.writeAsString(jsonEncode(payload));
+                                    const String deviceModelName = "Server";
+                                    const String deviceModelVersion = "v1";  
+                    
+                                    SSLContextProvider sslContextProvider = SSLContextProvider();
+                                    SecurityContext securityContext = await sslContextProvider.createSSLContext();
+                    
+                    
+                    
+                                    // JSON payload:
+                                    final payload = { 
+                                    'deviceID': deviceID,
+                                    'fiscalDayNo': fiscalDay,
+                                    'fiscalDayCounters': [
+                                      ...invoices.map((c) => c.toJson()),
+                                      ...creditNotes.map((c) => c.toJson()),
+                                      ...balances.map((c) => c.toJson()),
+                                    ],
+                                    'fiscalDayDeviceSignature': {
+                                      'hash' : hash,
+                                      'signature': receiptDeviceSignature_signature,
+                                    },
+                                    'receiptCounter': dayReceiptCounter.length,
+                                    };
+                    
+                                    Map<String , dynamic> response = await CloseDay.submitCloseDay(
+                                      apiEndpoint: apiEndpointCloseDay,
+                                      deviceModelName: deviceModelName,
+                                      deviceModelVersion: deviceModelVersion,
+                                      securityContext: securityContext,
+                                      payload: payload,
+                                    );
+                                    Get.snackbar(
+                                      "Zimra Response", "$response",
+                                      snackPosition: SnackPosition.TOP,
+                                      colorText: Colors.white,
+                                      backgroundColor: Colors.green,
+                                      icon: const Icon(Icons.message, color: Colors.white),
+                                    );
+                                    print("Response: $response");
+                                    // And your concatenated string is:
+                                    print(finalStringConcat);
+                                    print(payload); 
+                                  
+                                    await dbHelper.updateFiscalDay(fiscalDay, formattedCloseDate);
+                                    // File file = File("/storage/emulated/0/Pulse/Configurations/jsonFile.txt");
+                                    // await file.writeAsString(jsonEncode(payload));
+                                  } catch (e) {
+                                    Get.snackbar('Close Day Request Error', "$e" , snackPosition: SnackPosition.TOP , colorText: Colors.white , backgroundColor: Colors.red , icon: Icon(Icons.error));
+                                  }
                                 },
                               ),
                             ],
@@ -4154,9 +4256,10 @@ Future<void> submitReceipt() async {
                   ListTile(
                     leading: const Icon(Icons.print),
                     title: const Text('Print Fiscal Day Z Report'),
-                    onTap: (){
+                    onTap: ()async{
                       try {
-                        handleZReportPrint();
+                        await getopendayData();
+                        await handleZReportPrint();
                       } catch (e) {
                         Get.snackbar("Z Report Printing Error", "$e" , snackPosition: SnackPosition.TOP, backgroundColor: Colors.red , colorText: Colors.white );
                       }

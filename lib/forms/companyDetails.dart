@@ -966,74 +966,87 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                                       child: SingleChildScrollView(
                                         controller: _verticalScroll,
                                         scrollDirection: Axis.vertical,
-                                        child: SingleChildScrollView(
+                                        child: Scrollbar(
+                                          thumbVisibility: true,
                                           controller: _horizontalScroll,
-                                          scrollDirection: Axis.horizontal,
-                                          child: DataTable(
-                                            headingTextStyle: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            headingRowColor: MaterialStateProperty.all(Colors.blue),
-                                            columns: const [
-                                              DataColumn(label: Text('TradeName')),
-                                              DataColumn(label: Text('TIN Number')),
-                                              DataColumn(label: Text('VAT Number')),
-                                              DataColumn(label: Text('Address')),
-                                              DataColumn(label: Text('Email')),
-                                              DataColumn(label: Text('Phone Number')),
-                                              DataColumn(label: Text('Website')),
-                                              DataColumn(label: Text('Device Id')),
-                                              DataColumn(label: Text('Activation Key')),
-                                              DataColumn(label: Text('Device Model Name')),
-                                              DataColumn(label: Text('Model Version')),
-                                              DataColumn(label:Text("Actions"))
-                                            ],
-                                            rows: taxPayerDetails.map((sales) {
-                                              return DataRow(
-                                                selected: selectedReceipt.contains(sales['taxPayerId']),
-                                                onSelectChanged: (selected) {
-                                                  toggleSelection(sales['taxPayerId']);
-                                                },
-                                                cells: [
-                                                  DataCell(Text(sales['taxPayerName'].toString())),
-                                                  DataCell(Text(sales['taxPayerTin'].toString())),
-                                                  DataCell(Text(sales['taxPayerVatNumber'].toString())),
-                                                  DataCell(Text(sales['taxPayerAddress'].toString())),
-                                                  DataCell(Text(sales['taxPayerEmail'].toString())),
-                                                  DataCell(Text(sales['taxPayerPhone'].toString())),
-                                                  DataCell(Text(sales['taxPayerWebsite'].toString())),
-                                                  DataCell(Text(sales['deviceID'].toString())),
-                                                  DataCell(Text(sales['activationKey'].toString())),
-                                                  DataCell(Text(sales['deviceModelName'].toString())),
-                                                  DataCell(Text(sales['deviceModelVersion'].toString())),
-                                                  DataCell(
-                                                    Row(
-                                                      children: [
-                                                        IconButton(
-                                                          icon: const Icon(Icons.edit, color: Colors.blue),
-                                                          onPressed: () {
-                                                            showUpdatePrompt();
-                                                          },
-                                                        ),
-                                                        IconButton(
-                                                          icon: const Icon(Icons.credit_card_outlined, color: Colors.blue),
-                                                          onPressed: () {
-                                                            
-                                                          },
-                                                        ),
-                                                        IconButton(
-                                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                                          onPressed: () async {
-                                                            
-                                                          },
+                                          notificationPredicate: (notif) => notif.depth == 1,
+                                          child: SingleChildScrollView(
+                                            controller: _horizontalScroll,
+                                            scrollDirection: Axis.horizontal,
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                                              child: ConstrainedBox(
+                                                constraints: const BoxConstraints(
+                                                  minWidth: 900, // Force overflow
+                                                ),
+                                                child: DataTable(
+                                                  headingTextStyle: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  headingRowColor: MaterialStateProperty.all(Colors.blue),
+                                                  columns: const [
+                                                    DataColumn(label: Text('TradeName')),
+                                                    DataColumn(label: Text('TIN Number')),
+                                                    DataColumn(label: Text('VAT Number')),
+                                                    DataColumn(label: Text('Address')),
+                                                    DataColumn(label: Text('Email')),
+                                                    DataColumn(label: Text('Phone Number')),
+                                                    DataColumn(label: Text('Website')),
+                                                    DataColumn(label: Text('Device Id')),
+                                                    DataColumn(label: Text('Activation Key')),
+                                                    DataColumn(label: Text('Device Model Name')),
+                                                    DataColumn(label: Text('Model Version')),
+                                                    DataColumn(label:Text("Actions"))
+                                                  ],
+                                                  rows: taxPayerDetails.map((sales) {
+                                                    return DataRow(
+                                                      selected: selectedReceipt.contains(sales['taxPayerId']),
+                                                      onSelectChanged: (selected) {
+                                                        toggleSelection(sales['taxPayerId']);
+                                                      },
+                                                      cells: [
+                                                        DataCell(Text(sales['taxPayerName'].toString())),
+                                                        DataCell(Text(sales['taxPayerTin'].toString())),
+                                                        DataCell(Text(sales['taxPayerVatNumber'].toString())),
+                                                        DataCell(Text(sales['taxPayerAddress'].toString())),
+                                                        DataCell(Text(sales['taxPayerEmail'].toString())),
+                                                        DataCell(Text(sales['taxPayerPhone'].toString())),
+                                                        DataCell(Text(sales['taxPayerWebsite'].toString())),
+                                                        DataCell(Text(sales['deviceID'].toString())),
+                                                        DataCell(Text(sales['activationKey'].toString())),
+                                                        DataCell(Text(sales['deviceModelName'].toString())),
+                                                        DataCell(Text(sales['deviceModelVersion'].toString())),
+                                                        DataCell(
+                                                          Row(
+                                                            children: [
+                                                              IconButton(
+                                                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                                                onPressed: () {
+                                                                  showUpdatePrompt();
+                                                                },
+                                                              ),
+                                                              IconButton(
+                                                                icon: const Icon(Icons.credit_card_outlined, color: Colors.blue),
+                                                                onPressed: () {
+                                                                  
+                                                                },
+                                                              ),
+                                                              IconButton(
+                                                                icon: const Icon(Icons.delete, color: Colors.red),
+                                                                onPressed: () async {
+                                                                  
+                                                                },
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            }).toList(),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),

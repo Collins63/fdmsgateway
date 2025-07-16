@@ -1,5 +1,7 @@
+import 'package:fdmsgateway/common/button.dart';
 import 'package:fdmsgateway/database.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 
 class OpenDayPage extends StatefulWidget {
@@ -16,11 +18,207 @@ class _openDayState extends State<OpenDayPage> {
   final ScrollController _verticalScroll = ScrollController();
   final ScrollController _horizontalScroll = ScrollController();
   List<int> selectedDay = [];
+  final saveCompanyDetailsKey = GlobalKey<FormState>();
+  TextEditingController fiscalDay = TextEditingController();
+  TextEditingController status = TextEditingController();
+  TextEditingController opened = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchFiscalDays();
+  }
+
+  void clearFields(){
+    fiscalDay.clear();
+    status.clear();
+    opened.clear();
+  }
+
+  //show create dialog
+   showAddDialog(){
+   return showDialog(
+    barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: SizedBox(
+            width: 1000,
+            height: 800,
+            child: Form(
+              key: saveCompanyDetailsKey,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Container(
+                        height: 5,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(20), 
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                          controller: fiscalDay,
+                          decoration: InputDecoration(
+                              labelText: 'Fiscal Day',
+                              labelStyle: TextStyle(color:Colors.grey.shade600 ),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  borderSide: BorderSide.none
+                              )
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                          validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                                                ),
+                        ),
+                      // Password Field
+                        const SizedBox(width: 10,),
+                        Expanded(
+                          child: TextFormField(
+                            controller: status,
+                            decoration: InputDecoration(
+                              labelText: 'Status',
+                              labelStyle:  TextStyle(color: Colors.grey.shade600),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                          controller: opened,
+                          decoration: InputDecoration(
+                            labelText: 'Opened',
+                            labelStyle:  TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.black),
+                          validator: (value){
+                            if(value!.isEmpty){
+                              return "required";
+                            }return null;
+                          },
+                                                ),
+                        ),
+                        const SizedBox(width: 10,),
+                        
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                      // Signup Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (saveCompanyDetailsKey.currentState!.validate()) {
+                              try {
+                                await dbHelper.manualinsertOpenDay(
+                                  int.tryParse(fiscalDay.text)! , status.text , opened.text
+                                );
+                                // Navigate to the HomePage after successful product addition
+                                clearFields();
+                                Navigator.pop(context);
+                                 Get.snackbar(
+                                  "Success",
+                                  "Details added successfully",
+                                  icon:const Icon(Icons.check),
+                                  colorText: Colors.white,
+                                  backgroundColor: Colors.green,
+                                  snackPosition: SnackPosition.TOP
+                                );
+                                fetchFiscalDays();
+                                } catch (e) {
+                                  Get.snackbar(
+                                    "Error",
+                                    "Error adding details: $e",
+                                    icon:const Icon(Icons.error),
+                                    colorText: Colors.white,
+                                    backgroundColor: Colors.red,
+                                    snackPosition: SnackPosition.TOP
+                                  );
+                                }
+                            }
+
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding:const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          child: const Text(
+                            'Save Details',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      
+                      ),const SizedBox(height: 10,),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: (){
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding:const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          child: const Text(
+                            "Close Form",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          )
+                        ),
+                      ),
+                      const SizedBox(height: 20,)  
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
   }
 
   Future<void> fetchFiscalDays() async {
@@ -131,10 +329,22 @@ class _openDayState extends State<OpenDayPage> {
                                       ),
                                     ),
                                   ),
+                        CustomOutlineBtn(
+                          text: "Add day field",
+                          color: Colors.green,
+                          icon: const Icon(Icons.add, color: Colors.white,),
+                          onTap: (){
+                            showAddDialog();
+                          },
+                          color2: Colors.green,
+                          width: 300,
+                          height: 50,
+                        ),
                     ],
                   ),
                 )
-            )
+            ),
+            
           ],
         ),
     );

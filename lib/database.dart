@@ -458,7 +458,7 @@ Future<Database> initDB() async {
       if (result.isNotEmpty) {
         return result.first["receiptGlobalNo"] as int;
       }
-        return 1; // Default value if no records exist
+        return 0; // Default value if no records exist
       }
       
     Future<int> getNextReceiptCounter(int fiscalDayNo) async {
@@ -694,6 +694,22 @@ Future<Database> initDB() async {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
+
+  Future<void> manualinsertOpenDay(
+      int fiscalDayNo, String status, String fiscalDayOpened) async {
+    final db = await initDB();
+    await db.insert(
+      'OpenDay',
+      {
+        'FiscalDayNo': fiscalDayNo,
+        'StatusOfFirstReceipt': status,
+        'FiscalDayOpened': fiscalDayOpened,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+
 
   Future<void> updateDatabase(Map<String, int> taxIDs) async {
   try {

@@ -1,4 +1,6 @@
 
+// //===========================================Test Code==============================================================
+
 // import 'dart:async';
 // import 'dart:collection';
 // import 'dart:convert';
@@ -3091,7 +3093,15 @@
    
 
 //     int nextInvoice = await dbHelper.getNextInvoiceId();
-//     int getNextReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
+//     // int getNextReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
+//     // int jsonGlobalNo;
+//     // if(getNextReceiptGlobalNo == 1){
+//     //   jsonGlobalNo =1;
+//     // }else{
+//     //   jsonGlobalNo = getNextReceiptGlobalNo + 1;
+//     // }
+//     int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
+//     int currentGlobalNo = latestReceiptGlobalNo + 1;
 
 //     // Ensure tax calculation does not fail
 //     List<Map<String, dynamic>> taxes = [];
@@ -3144,7 +3154,7 @@
 //           // Only add taxPercent if it's not an empty strin
 //         }).toList(),
 //         "receiptType": "FISCALINVOICE",
-//         "receiptGlobalNo": getNextReceiptGlobalNo + 1,
+//         "receiptGlobalNo": currentGlobalNo,
 //         "receiptCurrency": transactionCurrency.toString(),
 //         "receiptPrintForm": "InvoiceA4",
 //         "receiptDate": formattedDate,
@@ -3525,7 +3535,7 @@
 //           conflictAlgorithm: ConflictAlgorithm.replace,
 //         );
 //          //print("Data inserted successfully!");
-//          handleReceiptPrint(jsonData, qrurl, receiptQrData);
+//         handleReceiptPrint(jsonData, qrurl, receiptQrData);
 //         generateInvoiceFromJson(jsonData, qrurl);
 //         //print58mmAdvanced(jsonData, qrurl);
 //         receiptItems.clear();
@@ -4705,5 +4715,3 @@
 
 
 // }
-
-

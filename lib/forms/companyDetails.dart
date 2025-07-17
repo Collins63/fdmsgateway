@@ -1,8 +1,10 @@
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fdmsgateway/common/button.dart';
 import 'package:fdmsgateway/database.dart';
+import 'package:fdmsgateway/main.dart';
 import 'package:fdmsgateway/models/jsonModels.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -72,16 +74,26 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
       await file.writeAsBytes(result.files.single.bytes!);
       print("logo saved to: ${file.path}");
     }
+    loadLogoBytes();
   }
 
   //delete logo
   Future<void> deleteLogo() async {
-  final file = await getLogoFile();
-  if (await file.exists()) {
-    await file.delete();
-    print("🗑️ Logo deleted");
+    final file = await getLogoFile();
+    if (await file.exists()) {
+      await file.delete();
+      print("🗑️ Logo deleted");
+    }
+    loadLogoBytes();
   }
-}
+
+  Future<Uint8List?> loadLogoBytes() async {
+    final logoFile = await getLogoFile();
+    if (await logoFile.exists()) {
+      return await logoFile.readAsBytes();
+    }
+    return null;
+  }
 
   TextEditingController taxPayerName = TextEditingController();
   TextEditingController taxPayerTin = TextEditingController();
@@ -495,7 +507,6 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
       },
     );
   }
-
   //show create dialog
    showAddDialog(){
    return showDialog(
@@ -819,7 +830,6 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                                   );
                                 }
                             }
-
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
@@ -865,7 +875,6 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
     );
 
   }
-
 
   Future<void> saveSelectedPrinter(String printerName) async {
     final prefs = await SharedPreferences.getInstance();
@@ -919,6 +928,9 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
   );
 }
 
+  
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -931,7 +943,7 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
             child: IconButton(
               icon: const Icon(Icons.arrow_circle_left_outlined, size: 40,),
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> MyHomePage()));
               },
             ),
           ),
@@ -1056,73 +1068,178 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                   ),
                 )
             ),
-            SizedBox(height: 30,),  
-            taxPayerDetails.isEmpty ?
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CustomOutlineBtn(
-                  height: 45,
-                  width: 300,
-                  text: "Create",
-                  color: Colors.green,
-                  color2: Colors.green,
-                  icon:const Icon(Icons.add, color: Colors.white,),
-                  onTap: () {
-                    showAddDialog();
-                  },
-                ),
-              ),
-            ) :const SizedBox(height: 2,),
-            Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: CustomOutlineBtn(
-                text: "Select Printer",
-                height: 45,
-                width: 600,
-                color: Colors.green,
-                color2: Colors.green,
-                icon: const Icon(Icons.print_rounded, color: Colors.white,),
-                onTap: (){
-                  showPrinterSelectionDialog(context);
-                },
-              ),
-            ),
-            const SizedBox(height: 20,),
+            SizedBox(height: 30,),
             Container(
-              height: 45,
-              width: 600,
+              height: 400,
+              width: 1200,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10.0),
                 boxShadow: [
                   BoxShadow(
-                    offset: Offset(0, 6),
                     color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    spreadRadius: 4
+                    offset: Offset(0, 6),
+                    spreadRadius: 4,
+                    blurRadius: 6
                   )
                 ]
               ),
-              child: Center(
-                child: Text("${selectedPrinter}" , style: TextStyle(fontWeight: FontWeight.w600),),
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 550,
+                      height: 350,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          taxPayerDetails.isEmpty ?
+                          CustomOutlineBtn(
+                                height: 45,
+                                width: 300,
+                                text: "Create",
+                                color: Colors.green,
+                                color2: Colors.green,
+                                icon:const Icon(Icons.add, color: Colors.white,),
+                                onTap: () {
+                                  showAddDialog();
+                                },
+                              )
+                            :const SizedBox(height: 2,),
+                            Padding(
+                              padding: const EdgeInsets.all(30.0),
+                              child: CustomOutlineBtn(
+                                text: "Select Printer",
+                                height: 45,
+                                width: 600,
+                                color: Colors.green,
+                                color2: Colors.green,
+                                icon: const Icon(Icons.print_rounded, color: Colors.white,),
+                                onTap: (){
+                                  showPrinterSelectionDialog(context);
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 5,),
+                            Container(
+                              height: 45,
+                              width: 480,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    offset: Offset(0, 6),
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    spreadRadius: 4
+                                  )
+                                ]
+                              ),
+                              child: Center(
+                                child: Text("${selectedPrinter}" , style: TextStyle(fontWeight: FontWeight.w600),),
+                              ),
+                            ),
+                            const SizedBox(height: 5,),
+                            Padding(
+                              padding: const EdgeInsets.all(30.0),
+                              child: CustomOutlineBtn(
+                                text: "Clear Printer Name",
+                                height: 45,
+                                width: 600,
+                                color: Colors.green,
+                                color2: Colors.green,
+                                icon: const Icon(Icons.print_rounded, color: Colors.white,),
+                                onTap: (){
+                                  clearSelectedPrinter();
+                                },
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 550,
+                      height: 350,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Colors.grey.shade200
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          Container(
+                            height: 200,
+                            width: 200,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10.0),
+                              border: Border.all(color: Colors.green , width: 1)
+                            ),
+                            child: FutureBuilder(
+                              future: loadLogoBytes(),
+                              builder: (context , snapshot){
+                                if(snapshot.hasData){
+                                  return Image.memory(snapshot.data!, width: 100,);
+                                }else{
+                                  return Center(child: Text("No logo uploaded"));
+                                }
+                              }),
+                          ),
+                          const SizedBox(height: 5,),
+                          CustomOutlineBtn(
+                            text: "Pick Logo",
+                            height: 40,
+                            width: 200,
+                            color: Colors.green,
+                            color2: Colors.green,
+                            icon: const Icon(Icons.image, color: Colors.white,),
+                            onTap: ()async{
+                              await pickAndSaveLogo();
+                              Navigator.pushReplacement(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => const CompanydetailsPage(),
+                                  transitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10,),
+                          CustomOutlineBtn(
+                            text: "Remove Logo",
+                            height: 40,
+                            width: 200,
+                            color: Colors.redAccent,
+                            color2: Colors.red,
+                            icon: const Icon(Icons.delete, color: Colors.white,),
+                            onTap: ()async{
+                              await deleteLogo();
+                              Navigator.pushReplacement(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => const CompanydetailsPage(),
+                                  transitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20,),
-            Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: CustomOutlineBtn(
-                text: "Clear Printer Name",
-                height: 45,
-                width: 600,
-                color: Colors.green,
-                color2: Colors.green,
-                icon: const Icon(Icons.print_rounded, color: Colors.white,),
-                onTap: (){
-                  clearSelectedPrinter();
-                },
-              ),
-            )
+            )  ,
+            
         ],
       ),
     );

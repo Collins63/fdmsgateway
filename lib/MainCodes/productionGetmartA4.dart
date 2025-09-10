@@ -161,6 +161,9 @@
 //   bool isProcessing = false;
 //   final Directory inputFolder = Directory(r'C:\Fiscal\Input');
 //   final Directory signedFolder = Directory(r'C:\Fiscal\Signed');
+//   final Directory originalFilesFolder = Directory(r'C:\Fiscal\OriginalFiles');
+//   final Directory unsignedFolder = Directory(r'C:\Fiscal\UnSigned');
+//   final Directory doneFolder = Directory(r'C:\Fiscal\Done');
 //   DatabaseHelper dbHelper =  DatabaseHelper();
 //   StreamSubscription<WatchEvent>? inputSub;
 //   StreamSubscription<WatchEvent>? signedSub;
@@ -482,6 +485,8 @@
 //       icon: const Icon(Icons.message, color: Colors.white),
 //     );
 //   }
+
+
 //   Future<String> ping() async {
 //     String apiEndpointPing =
 //         "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/Ping";
@@ -2788,18 +2793,22 @@
 //             await addItem(tableData);
 //             print("done with adding items");
 //             await generateFiscalJSON();
-//             await submitReceipt();
-
-//             final destPath = path.join(signedFolder.path, path.basename(file.path));
-//             await file.rename(destPath);
-//             print("📁 Moved to Signed: ${path.basename(destPath)}");
-//             await stampInvoice(
-//               File(destPath),
-//               "$stampDayNo",                         // replace with your dynamic day number
-//               "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-//               "$stampQRData",
-//               "$stampVerificationCode"          // replace with the actual QR data
-//             );
+//             bool success = await submitReceipt();
+//             if(success == true){
+//               final destPath = path.join(originalFilesFolder.path, path.basename(file.path));
+//               await file.rename(destPath);
+//               print("📁 Moved to Original Files: ${path.basename(destPath)}");
+//               await stampInvoice(
+//                 File(destPath),
+//                   "$stampDayNo",                         // replace with your dynamic day number
+//                   "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+//                   "$stampQRData",
+//                   "$stampVerificationCode"          // replace with the actual QR data
+//               );
+//             }else{
+//               final destPath = path.join(unsignedFolder.path , path.basename(file.path));
+//               await file.rename(destPath);
+//             }
 //           } else if (documentType == 'credit_note') {
 //             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
 //             final List<dynamic> tableData = responseData['line_items'];
@@ -2817,6 +2826,13 @@
 //             final destPath = path.join(signedFolder.path, path.basename(file.path));
 //             await file.rename(destPath);
 //             print("📁 Moved to Signed: ${path.basename(destPath)}");
+//             await stampInvoice(
+//               File(destPath),
+//               "$stampDayNo",                         // replace with your dynamic day number
+//               "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+//               "$stampQRData",
+//               "$stampVerificationCode"          // replace with the actual QR data
+//             );
 //           }
 //         }
 //       } else {
@@ -3416,58 +3432,71 @@
 //   }
 
 //   //add to receipt items
-// Future<void> addItem(List<dynamic> tableData) async {
+//   Future<void> addItem(List<dynamic> tableData) async {
+  
 //   final List<Map<String, dynamic>> lineItems = tableData.cast<Map<String, dynamic>>();
 //   final newItems = <Map<String, dynamic>>[];
-
+  
 //   for (var item in lineItems) {
 //     // Validate required fields
-//     if (item['description'] == null || item['unit_price'] == null) {
+//     if (item['Description'] == null || item['Unit Price'] == null) {
 //       continue;
 //     }
-//     double unitPrice = (item['unit_price'] is String)
-//       ? double.tryParse(item['unit_price'].replaceAll(',', '')) ?? 0
-//       : (item['unit_price'] ?? 0).toDouble();
-//     // int quantity = (item['Qty'] is String)
-//     //     ? int.tryParse(item['Qty']) ?? 1
-//     //     : (item['Qty'] ?? 1);
-//     double totalPrice = double.tryParse(item['unit_price'].toString().replaceAll(',', '')) ?? 0;
-//     //double itemTotal = totalPrice / quantity;
+//     double unitPrice = (item['Unit Price'] is String)
+//       ? double.tryParse(item['Unit Price'].replaceAll(',', '')) ?? 0
+//       : (item['Unit Price'] ?? 0).toDouble();
+
+//     int quantity = (item['Qty'] is String)
+//         ? int.tryParse(item['Qty']) ?? 1
+//         : (item['Qty'] ?? 1);
+
+    
+//     //double totalPrice = double.tryParse(item['unit_price'].toString().replaceAll(',', '')) ?? 0;
 //     double itemTax;
 //     int taxID;
 //     String taxCode;
 //     String taxPercent;
-
-//     final vatValue = item['vat_15'];
-//     if (vatValue != null && vatValue != '-' && double.tryParse(vatValue) != null && double.parse(vatValue) > 0.0) {
+//     double lineItemTax = 0;
+//     double itemTotal = 0 ;
+//     double totalPrice =  0 ;
+//     final vatValue = item['Total VAT'];
+    
+//     if ((vatValue) != null && vatValue != "-" && double.parse(vatValue.toString()) > 0.0 ) {
+//       lineItemTax = unitPrice * 0.15;
+//       itemTotal = roundTo2(unitPrice + lineItemTax);
+//       totalPrice = roundTo2(itemTotal * quantity);
 //       taxID = 1;
 //       taxPercent = "15.00";
 //       taxCode = "A";
-//       itemTax = double.tryParse(vatValue)!;
-//       salesAmountwithTax += totalPrice + itemTax;
+//       itemTax = roundTo2(unitPrice * quantity * 0.15);
+//       salesAmountwithTax += totalPrice;
 //     } else if (vatValue == '-') {
+//       itemTotal = unitPrice;
+//       totalPrice = itemTotal * quantity;
 //       taxID = 3;
 //       taxPercent = "0";
 //       taxCode = "C";
 //       itemTax = 0;
 //     } else {
-//       taxID = 2;
+//       itemTotal = unitPrice;
+//       totalPrice = itemTotal * quantity;
+//       taxID =2;
 //       taxPercent = "0.00";
 //       taxCode = "B";
-//       itemTax = totalPrice * double.parse(taxPercent);
+//       itemTax = 0;
 //     }
 
 //     newItems.add({
-//       'productName': item['description'] ?? 'Unknown',
-//       'unitPrice': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
-//       'price': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
-//       'quantity': 1,
-//       'total': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
+//       'productName': item['Description'] ?? 'Unknown',
+//       'unitPrice': unitPrice,
+//       'price': itemTotal,
+//       'quantity': quantity,
+//       'total': totalPrice,
 //       'taxID': taxID,
 //       'taxPercent': taxPercent,
 //       'taxCode': taxCode,
 //     });
-//     totalAmount += totalPrice + itemTax;
+//     totalAmount += totalPrice;
 //     taxAmount += itemTax;
 //   }
 
@@ -3478,7 +3507,6 @@
 
 //   print("receiptItems: $receiptItems");
 // }
-
 
 // double roundTo2(double value) {
 //   final Decimal decimalValue = Decimal.parse(value.toString());
@@ -3747,61 +3775,6 @@
 //       };
 //     }).toList();
 //   }
-
-//   //generate hash
-//   // generateHash(String date) async {
-//   //   String saleCurrency = transactionCurrency.toString();
-//   //   int latestFiscDay = await dbHelper.getlatestFiscalDay();
-//   //   String receiptString;
-//   //   setState(() {
-//   //     currentFiscal = latestFiscDay;
-//   //   });
-//   //   List<Map<String, dynamic>> data = await dbHelper.getReceiptsSubmittedToday(currentFiscal);
-//   //   setState(() {
-//   //     dayReceiptCounter = data;
-//   //   });
-//   //   int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
-//   //   int currentGlobalNo = latestReceiptGlobalNo + 1;
-//   //   setState(() {
-//   //     currentReceiptGlobalNo = currentGlobalNo.toString();
-//   //   });
-//   //   String getLatestReceiptHash = await dbHelper.getLatestReceiptHash();
-//   //   if(dayReceiptCounter.isEmpty){
-//   //     receiptString = generateReceiptString(
-//   //       deviceID: deviceID,
-//   //       receiptType: "FISCALINVOICE",
-//   //       receiptCurrency: saleCurrency,
-//   //       receiptGlobalNo: currentGlobalNo,
-//   //       receiptDate: date,
-//   //       receiptTotal: totalAmount,
-//   //       receiptItems: receiptItems,
-//   //       getPreviousReceiptHash:"",
-//   //     );
-//   //     print("Concatenated Receipt String:$receiptString");
-//   //     logToFile(receiptString);
-//   //     receiptString.trim();
-//   //   }
-//   //   else{
-//   //     receiptString = generateReceiptString(
-//   //       deviceID: deviceID,
-//   //       receiptType: "FISCALINVOICE",
-//   //       receiptCurrency: saleCurrency,
-//   //       receiptGlobalNo: currentGlobalNo,
-//   //       receiptDate: date,
-//   //       receiptTotal: totalAmount,
-//   //       receiptItems: receiptItems,
-//   //       getPreviousReceiptHash: getLatestReceiptHash,
-//   //     );
-//   //   }
-//   // print("Concatenated Receipt String:$receiptString");
-//   // receiptString.trim();
-//   //   var bytes = utf8.encode(receiptString);
-//   //   var digest = sha256.convert(bytes);
-//   //   final hash = base64.encode(digest.bytes);
-//   //   print(hash);
-//   //   logToFile(hash);
-//   //   return hash;
-//   // }
 
 //   Future<Map<String, String>> generateHash(String date) async {
 //     String saleCurrency = transactionCurrency.toString();
@@ -4657,125 +4630,10 @@
 //       return true;
 //     }
 //     else{
-//       //return false;
-//       try {
-//           final Database dbinit = await dbHelper.initDB();
-//           await dbinit.insert('submittedReceipts',
-//             {
-//               'receiptCounter': jsonData['receipt']?['receiptCounter'] ?? 0,
-//               'FiscalDayNo' : fiscalDayNo,
-//               'InvoiceNo': int.tryParse(jsonData['receipt']?['invoiceNo']?.toString() ?? "0") ?? 0,
-//               'receiptID': 0,
-//               'receiptType': jsonData['receipt']['receiptType']?.toString() ?? "",
-//               'receiptCurrency': jsonData['receipt']?['receiptCurrency']?.toString() ?? "",
-//               'moneyType': moneyType,
-//               'receiptDate': jsonData['receipt']?['receiptDate']?.toString() ?? "",
-//               'receiptTime': jsonData['receipt']?['receiptDate']?.toString() ?? "",
-//               'receiptTotal': receiptTotal,
-//               'taxCode': "C",
-//               'taxPercent': "15.00",
-//               'taxAmount': taxAmount ?? 0,
-//               'SalesAmountwithTax': salesAmountwithTax ?? 0,
-//               'receiptHash': jsonData['receipt']?['receiptDeviceSignature']?['hash']?.toString() ?? "",
-//               'receiptJsonbody': receiptJsonbody?.toString() ?? "",
-//               'StatustoFDMS': "NOTSubmitted".toString(),
-//               'qrurl': qrurl,
-//               'receiptServerSignature':"",
-//               'submitReceiptServerresponseJSON':"noresponse",
-//               'Total15VAT': total15VAT.toString(),
-//               'TotalNonVAT': totalNonVAT,
-//               'TotalExempt': totalExempt,
-//               'TotalWT': 0.0,
-//             },
-//             conflictAlgorithm: ConflictAlgorithm.replace,
-//           );
-//           //print("Data inserted successfully!");
-//           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-//           handleReceiptPrint(jsonData, qrurl, receiptQrData);
-//           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
-//           //print58mmAdvanced(jsonData, qrurl);
-//             receiptItems.clear();
-//             totalAmount = 0.0;
-//             taxAmount = 0.0;
-//             currentReceiptGlobalNo = "";
-//             currentUrl = "";
-//             currentDayNo = "";
-//             selectedCustomer.clear();
-//             receiptItems.clear();
-//             isReceiptCreditNote =0;
-//             fetchDayReceiptCounter();
-//             fetchReceiptsPending();
-//             fetchReceiptsSubmitted();
-//         } catch (e) {
-//           Get.snackbar("Db Error",
-//             "$e",
-//             snackPosition: SnackPosition.TOP,
-//             colorText: Colors.white,
-//             backgroundColor: Colors.red,
-//             icon: const Icon(Icons.error),
-//           );
-//       }
+//       return false;
 //     }
 //       } catch (e) {
-//         try {
-//           final Database dbinit = await dbHelper.initDB();
-//           await dbinit.insert('submittedReceipts',
-//             {
-//               'receiptCounter': jsonData['receipt']?['receiptCounter'] ?? 0,
-//               'FiscalDayNo' : fiscalDayNo,
-//               'InvoiceNo': int.tryParse(jsonData['receipt']?['invoiceNo']?.toString() ?? "0") ?? 0,
-//               'receiptID': 0,
-//               'receiptType': jsonData['receipt']['receiptType']?.toString() ?? "",
-//               'receiptCurrency': jsonData['receipt']?['receiptCurrency']?.toString() ?? "",
-//               'moneyType': moneyType,
-//               'receiptDate': jsonData['receipt']?['receiptDate']?.toString() ?? "",
-//               'receiptTime': jsonData['receipt']?['receiptDate']?.toString() ?? "",
-//               'receiptTotal': receiptTotal,
-//               'taxCode': "C",
-//               'taxPercent': "15.00",
-//               'taxAmount': taxAmount ?? 0,
-//               'SalesAmountwithTax': salesAmountwithTax ?? 0,
-//               'receiptHash': jsonData['receipt']?['receiptDeviceSignature']?['hash']?.toString() ?? "",
-//               'receiptJsonbody': receiptJsonbody?.toString() ?? "",
-//               'StatustoFDMS': "NOTSubmitted".toString(),
-//               'qrurl': qrurl,
-//               'receiptServerSignature':"",
-//               'submitReceiptServerresponseJSON':"noresponse",
-//               'Total15VAT': total15VAT.toString(),
-//               'TotalNonVAT': totalNonVAT,
-//               'TotalExempt':totalExempt,
-//               'TotalWT': 0.0,
-//             },
-//             conflictAlgorithm: ConflictAlgorithm.replace,
-//           );
-//           print("Data inserted successfully!");
-//           totalAmount = 0.0;
-//           taxAmount = 0.0;
-//           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-//           handleReceiptPrint(jsonData, qrurl,receiptQrData);
-//           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
-//           totalAmount = 0.0;
-//           taxAmount = 0.0;
-//           currentReceiptGlobalNo = "";
-//           currentUrl = "";
-//           currentDayNo = "";
-//           selectedCustomer.clear();
-//           isReceiptCreditNote =0;
-//           //print58mmAdvanced(jsonData, qrurl);
-//           receiptItems.clear();
-//           isReceiptCreditNote =0;
-//           fetchDayReceiptCounter();
-//           fetchReceiptsPending();
-//           fetchReceiptsSubmitted();
-//         } catch (e) {
-//           Get.snackbar("DB error Error",
-//             "$e",
-//             snackPosition: SnackPosition.TOP,
-//             colorText: Colors.white,
-//             backgroundColor: Colors.red,
-//             icon: const Icon(Icons.error),
-//           );
-//       }
+//         return false;
 //       }
 //     }
 //     else{
@@ -4838,7 +4696,8 @@
 //           backgroundColor: Colors.red,
 //           icon: const Icon(Icons.error),
 //         );
-//     }
+//       }
+//       return true;
 //     }
 //   }
 

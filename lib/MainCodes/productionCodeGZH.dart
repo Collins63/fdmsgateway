@@ -3,7 +3,6 @@
 // import 'dart:convert';
 // import 'dart:io';
 // import 'package:crypto/crypto.dart';
-// import 'package:decimal/decimal.dart';
 // import 'package:fdmsgateway/common/button.dart';
 // import 'package:fdmsgateway/database.dart';
 // import 'package:fdmsgateway/fiscalization/closeday.dart';
@@ -42,7 +41,7 @@
 //   sqfliteFfiInit(); 
 //   databaseFactory = databaseFactoryFfi;
 //   WidgetsFlutterBinding.ensureInitialized();
-//   //_startFolderWatcher();
+//   _startFolderWatcher();
 //   runApp(const MyApp());
 // }
 
@@ -540,6 +539,7 @@
 //     SSLContextProvider sslContextProvider = SSLContextProvider();
 //     SecurityContext securityContext = await sslContextProvider.createSSLContext();
 //     // Retrieve unsubmitted receipts
+//     //List<Map<String, dynamic>> receipts = await db.rawQuery(sql);
 //     List<Map<String, dynamic>> receipts = await dbHelper.getReceiptsNotSubmitted();
 //     print(receipts);
 //     for (var row in receipts) {
@@ -624,9 +624,12 @@
 //     });
 //     return latestFiscDay;
 //   }
+
+  
 //   ///==================================END FDMS FUNCTIONS========================================
 //   ///
 //   ///
+  
 //   String formatString(String input) {
 //     final buffer = StringBuffer();
 //     for (int i = 0; i < input.length; i += 4) {
@@ -2629,7 +2632,7 @@
 //   ///
 //   ///
 //   void logToFile(String message) async {
-//     final logFile = File('C:/FDMS-gateway/Files/log.txt'); // or better, use app data dir
+//     final logFile = File('C:/FMDS-gateway/Files/log.txt'); // or better, use app data dir
 //     final timestamp = DateTime.now().toIso8601String();
 //     await logFile.writeAsString('[$timestamp] $message\n', mode: FileMode.append);
 //   }
@@ -2707,13 +2710,13 @@
 //                   'customerVAT': customerDetails['vat_number'],
 //                   'customerTIN': customerDetails['tin'],
 //                   'customerPhone': customerDetails['phone'],
-//                   'customerEmail': customerDetails['email'] != "null"
-//                       ? customerDetails['email']
-//                       : 'noemail@email.com',
-//                   'houseNO': buyerAddress['houseNo'],
-//                   'street': buyerAddress['street'],
-//                   'province': buyerAddress['province'],
-//                   'city': buyerAddress['city']
+//                   // 'customerEmail': customerDetails['email'] != "null"
+//                   //     ? customerDetails['email']
+//                   //     : 'noemail@email.com',
+//                   // 'houseNO': buyerAddress['houseNo'],
+//                   // 'street': buyerAddress['street'],
+//                   // 'province': buyerAddress['province'],
+//                   // 'city': buyerAddress['city']
 //                 });
 //               }
 //             });
@@ -2758,32 +2761,57 @@
 //         } else {
 //           // Invoice branch
 //           if (documentType == 'invoice') {
+//             // final List<dynamic> tableData = responseData['line_items'];
+//             // final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
 
+//             // setState(() {
+//             //   invoiceDetails = invoiceDetailsInner;
+//             //   transactionCurrency = invoiceDetailsInner['currency'];
+//             //   currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
+
+//             //   if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
+//             //     selectedCustomer.clear();
+//             //   } else {
+//             //     selectedCustomer.add({
+//             //       'customerName': invoiceDetailsInner['customer_name'],
+//             //       'customerVAT': invoiceDetailsInner['buyer_vat'],
+//             //       'customerTIN': invoiceDetailsInner['buyer_tin'],
+//             //       'customerPhone': invoiceDetailsInner['phone'],
+//             //       'customerEmail': invoiceDetailsInner['email'],
+//             //     });
+//             //   }
+//             // });
+
+//             // print("adding items");
+//             // await addItem(tableData);
+//             // print("done with adding items");
+//             // await generateFiscalJSON();
+//             // await submitReceipt();
+
+//             // final destPath = path.join(signedFolder.path, path.basename(file.path));
+//             // await file.rename(destPath);
+//             // print("📁 Moved to Signed: ${path.basename(destPath)}");
 //             final List<dynamic> tableData = responseData['line_items'];
-//             final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
+//             final Map<String, dynamic> invoiceDetailsInner = responseData['totals'];
 
 //             setState(() {
 //               invoiceDetails = invoiceDetailsInner;
 //               transactionCurrency = responseData['currency'];
 //               currentInvoiceNumber = responseData['invoice_number'];
 
-//               if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-//                 selectedCustomer.clear();
-//               } else {
-//                 final buyerAddress = invoiceDetailsInner['buyerAddress'];
-//                 selectedCustomer.add({
-//                   'customerName': invoiceDetailsInner['customer_name'],
-//                   'customerVAT': invoiceDetailsInner['buyer_vat'],
-//                   'customerTIN': invoiceDetailsInner['buyer_tin'],
-//                   'customerPhone': invoiceDetailsInner['phone'],
-//                   'customerEmail': invoiceDetailsInner['email'],
-//                   'houseNO': buyerAddress['houseNo'],
-//                   'street': buyerAddress['street'],
-//                   'province': buyerAddress['province'],
-//                   'city': buyerAddress['city']
-//                 });
-//               }
+//               // if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
+//               //   selectedCustomer.clear();
+//               // } else {
+//               //   selectedCustomer.add({
+//               //     'customerName': invoiceDetailsInner['customer_name'],
+//               //     'customerVAT': invoiceDetailsInner['buyer_vat'],
+//               //     'customerTIN': invoiceDetailsInner['buyer_tin'],
+//               //     'customerPhone': invoiceDetailsInner['phone'],
+//               //     'customerEmail': invoiceDetailsInner['email'],
+//               //   });
+//               // }
 //             });
+
 //             print("adding items");
 //             await addItem(tableData);
 //             print("done with adding items");
@@ -2855,7 +2883,7 @@
 //     return {
 //       ...tax,
 //       "salesAmountWithTax": -1 * (double.tryParse(tax["salesAmountWithTax"].toString()) ?? 0.0),
-//       "taxAmount": tax["taxAmount"] != "0" && tax["taxAmount"] !="0.00" ? (-1 * double.parse(tax["taxAmount"].toString())).toStringAsFixed(2) : tax["taxAmount"].toString(),
+//       "taxAmount": tax["taxAmount"] != "0" && tax["taxAmount"] !="0.00" ? (-1 * double.parse(tax["taxAmount"])).toStringAsFixed(2) : tax["taxAmount"].toString(),
 //     };
 //   }).toList();
 
@@ -2865,7 +2893,7 @@
 //     return {
 //       ...payment,
 //       "paymentAmount":
-//           (-1 * double.parse(payment["paymentAmount"].toString())).toStringAsFixed(2),
+//           (-1 * double.parse(payment["paymentAmount"])).toStringAsFixed(2),
       
 //     };
 //   }).toList();
@@ -2875,14 +2903,14 @@
 //     return {
 //       ...line,
 //       "receiptLineTotal":
-//           (-1 * double.parse(line["receiptLineTotal"].toString())).toStringAsFixed(2),
-//       "receiptLinePrice": (-1 * double.parse(line["receiptLinePrice"].toString())).toStringAsFixed(2) ,
+//           (-1 * double.parse(line["receiptLineTotal"])).toStringAsFixed(2),
+//       "receiptLinePrice": (-1 * double.parse(line["receiptLinePrice"])).toStringAsFixed(2) ,
 //     };
 //   }).toList();
 
 //   // 3. Negate receiptTotal
 //   creditNoteBody["receiptTotal"] =
-//       (-1 * double.parse(creditNoteBody["receiptTotal"].toString())).toStringAsFixed(2);
+//       (-1 * double.parse(creditNoteBody["receiptTotal"])).toStringAsFixed(2);
 
 //   // Update receiptGlobalNo, receiptCounter, receiptDate, and add receiptNotes
 //   creditNoteBody["receiptGlobalNo"] = int.parse(newReceiptGlobalNo);
@@ -3382,7 +3410,7 @@
 //         );
 //       }
 //     }
-//     File file = File("C:/FDMS-gateway/Files/jsonFile.txt");
+//     File file = File("C:/FMDS-gateway/Files/jsonFile.txt");
 //     await file.writeAsString(creditNoteJson);
 //     print(creditNoteJson);
 
@@ -3481,9 +3509,7 @@
 
 
 // double roundTo2(double value) {
-//   final Decimal decimalValue = Decimal.parse(value.toString());
-//   final Decimal rounded = decimalValue.round(scale: 2);
-//   return double.parse(rounded.toString());
+//   return double.parse(value.toStringAsFixed(2));
 // }
 
 //  //add to receipt items
@@ -3521,8 +3547,8 @@
 //     final taxLetter = item['tax_letter'];
 //     if (taxLetter=='T' ) {
 //       lineItemTax = roundTo2(unitPrice * 0.15);
-//       itemTotal = roundTo2( unitPrice + lineItemTax);
-//       totalPrice = roundTo2(itemTotal * quantity);
+//       itemTotal = unitPrice + lineItemTax;
+//       totalPrice = itemTotal * quantity;
 //       taxID = 1;
 //       taxPercent = "15.00";
 //       taxCode = "A";
@@ -3543,6 +3569,7 @@
 //       taxCode = "C";
 //       itemTax = 0;
 //     }
+
 //     print("adding new items");
 //     newItems.add({
 //       'productName': item['description'] ?? item['hs_code'] ?? 'Unknown',
@@ -3565,6 +3592,66 @@
 
 //   print("receiptItems: $receiptItems");
 // }
+
+// //   String generateTaxSummary(List<dynamic> receiptItems) {
+// //   Map<int, Map<String, dynamic>> taxGroups = {};
+
+// //   for (var item in receiptItems) {
+// //     int taxID = item["taxID"];
+// //     double total = item["total"];
+// //     String taxCode = item["taxCode"];
+// //     double unitPrice = item["unitPrice"];
+// //     int quantity = item["quantity"];
+    
+// //     // Preserve empty taxPercent when missing
+// //     String? taxPercentValue = item["taxPercent"];
+// //     double taxPercent = (taxPercentValue == null || taxPercentValue == "")
+// //         ? 0.0
+// //         : double.parse(taxPercentValue);
+
+// //     if (!taxGroups.containsKey(taxID)) {
+// //       taxGroups[taxID] = {
+// //         "taxCode": taxCode,
+// //         "taxPercent": taxPercentValue == null || taxPercentValue == "" 
+// //           ? 0
+// //           : (taxPercent % 1 == 0 
+// //               ? "${taxPercent.toInt()}.00" 
+// //               : taxPercent.toStringAsFixed(2)),
+// //         "taxAmount": 0.0,
+// //         "salesAmountWithTax": 0.0
+// //       };
+// //     }
+// //     double taxAmount ;
+// //     if(taxPercentValue=="15.00"){
+// //       //taxAmount = total - double.parse((total / 1.15).toStringAsFixed(2));
+// //       taxAmount = double.tryParse((unitPrice * 0.15 * quantity).toStringAsFixed(2))!;
+// //     }else{
+// //       taxAmount = total * 0;
+// //     }
+// //     taxGroups[taxID]!["taxAmount"] += taxAmount;
+// //     taxGroups[taxID]!["salesAmountWithTax"] += total;
+// //   }
+
+// //   List<Map<String, dynamic>> sortedTaxes = taxGroups.values.toList()
+// //     ..sort((a, b) => a["taxCode"].compareTo(b["taxCode"]));
+
+// //   // return sortedTaxes.map((tax) {
+// //   //   return "${tax["taxCode"]}${tax["taxPercent"]}${(tax["taxAmount"] * 100).round().toString()}${(tax["salesAmountWithTax"] * 100).round().toString()}";
+// //   // }).join("");
+// //   return sortedTaxes.map((tax) {
+// //     final taxCode = tax["taxCode"];
+// //     final taxPercent = tax["taxPercent"];
+// //     final taxAmount = (tax["taxAmount"] * 100).round().toString();
+// //     final salesAmount = (tax["salesAmountWithTax"] * 100).round().toString();
+
+// //     // Omit taxPercent for taxCode A
+// //     if (taxCode == "C") {
+// //       return "$taxCode$taxAmount$salesAmount";
+// //     }
+
+// //     return "$taxCode$taxPercent$taxAmount$salesAmount";
+// //   }).join("");
+// // }
 
 //   String generateTaxSummary(List<dynamic> receiptItems) {
 //     Map<int, Map<String, dynamic>> taxGroups = {};
@@ -3630,6 +3717,7 @@
 //     }).join("");
 //   }
 
+
 //   String generateReceiptString({
 //     required int deviceID,
 //     required String receiptType,
@@ -3692,8 +3780,62 @@
 //       print("Concatenated Receipt String: $receiptString");
 //       logToFile(receiptString);
 //       return receiptString;
-//     }  
+//     }
+    
+  
 //   }
+
+// //   //gnerate receipt taxes
+// //     List<Map<String, dynamic>> generateReceiptTaxes(List<dynamic> receiptItems) {
+// //   Map<int, Map<String, dynamic>> taxGroups = {}; // Store tax summaries
+
+// //   for (var item in receiptItems) {
+// //     int taxID = item["taxID"];
+// //     String taxPercent = item["taxPercent"];
+// //     double total = item["total"];
+// //     double unitPrice = item["unitPrice"];
+// //     int quantity = item["quantity"];
+
+// //     if (!taxGroups.containsKey(taxID)) {
+// //       taxGroups[taxID] = {
+// //         "taxID": taxID,
+// //         "taxPercent": taxPercent.isEmpty ? "" : taxPercent, // Leave blank if empty
+// //         "taxCode": item["taxCode"],
+// //         "taxAmount": 0.0,
+// //         "salesAmountWithTax": 0.0
+// //       };
+// //     }
+// //     double taxAmount;
+// //     if(taxPercent.isEmpty){
+// //       taxAmount = 0.00;
+// //     }
+// //     else if(taxPercent=="15.00"){
+// //       taxAmount = double.tryParse((unitPrice * 0.15 * quantity).toStringAsFixed(2))!;
+// //     }
+// //     else{
+// //       taxAmount = total * 0;
+// //     }
+// //     taxGroups[taxID]!["taxAmount"] += taxAmount;
+// //     taxGroups[taxID]!["salesAmountWithTax"] += total;
+// //   }
+// //   return taxGroups.values.map((tax) {
+// //     final taxID = tax["taxID"];
+// //     final taxCode = tax["taxCode"];
+// //     final isGroupA = (taxCode == "C" || taxID == 3);
+    
+// //     double tax1 = (tax["salesAmountWithTax"] is String)
+// //     ? double.tryParse(tax["salesAmountWithTax"]) ?? 0
+// //     : (tax["salesAmountWithTax"] ?? 0).toDouble();
+
+// //     return {
+// //       "taxID": taxID.toString(),
+// //       if (!isGroupA) "taxPercent": tax["taxPercent"], // Omit if group C
+// //       "taxCode": taxCode,
+// //       "taxAmount": isGroupA ? "0" : tax["taxAmount"].toStringAsFixed(2),
+// //       "salesAmountWithTax": tax1.toStringAsFixed(2),
+// //     };
+// //   }).toList();
+// // }
 
 //   List<Map<String, dynamic>> generateReceiptTaxes(List<dynamic> receiptItems) {
 //     Map<int, Map<String, dynamic>> taxGroups = {}; // Store tax summaries
@@ -3749,85 +3891,24 @@
 //   }
 
 //   //generate hash
-//   // generateHash(String date) async {
-//   //   String saleCurrency = transactionCurrency.toString();
-//   //   int latestFiscDay = await dbHelper.getlatestFiscalDay();
-//   //   String receiptString;
-//   //   setState(() {
-//   //     currentFiscal = latestFiscDay;
-//   //   });
-//   //   List<Map<String, dynamic>> data = await dbHelper.getReceiptsSubmittedToday(currentFiscal);
-//   //   setState(() {
-//   //     dayReceiptCounter = data;
-//   //   });
-//   //   int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
-//   //   int currentGlobalNo = latestReceiptGlobalNo + 1;
-//   //   setState(() {
-//   //     currentReceiptGlobalNo = currentGlobalNo.toString();
-//   //   });
-//   //   String getLatestReceiptHash = await dbHelper.getLatestReceiptHash();
-//   //   if(dayReceiptCounter.isEmpty){
-//   //     receiptString = generateReceiptString(
-//   //       deviceID: deviceID,
-//   //       receiptType: "FISCALINVOICE",
-//   //       receiptCurrency: saleCurrency,
-//   //       receiptGlobalNo: currentGlobalNo,
-//   //       receiptDate: date,
-//   //       receiptTotal: totalAmount,
-//   //       receiptItems: receiptItems,
-//   //       getPreviousReceiptHash:"",
-//   //     );
-//   //     print("Concatenated Receipt String:$receiptString");
-//   //     logToFile(receiptString);
-//   //     receiptString.trim();
-//   //   }
-//   //   else{
-//   //     receiptString = generateReceiptString(
-//   //       deviceID: deviceID,
-//   //       receiptType: "FISCALINVOICE",
-//   //       receiptCurrency: saleCurrency,
-//   //       receiptGlobalNo: currentGlobalNo,
-//   //       receiptDate: date,
-//   //       receiptTotal: totalAmount,
-//   //       receiptItems: receiptItems,
-//   //       getPreviousReceiptHash: getLatestReceiptHash,
-//   //     );
-//   //   }
-//   // print("Concatenated Receipt String:$receiptString");
-//   // receiptString.trim();
-//   //   var bytes = utf8.encode(receiptString);
-//   //   var digest = sha256.convert(bytes);
-//   //   final hash = base64.encode(digest.bytes);
-//   //   print(hash);
-//   //   logToFile(hash);
-//   //   return hash;
-//   // }
-
-//   Future<Map<String, String>> generateHash(String date) async {
+//   generateHash(String date) async {
 //     String saleCurrency = transactionCurrency.toString();
 //     int latestFiscDay = await dbHelper.getlatestFiscalDay();
 //     String receiptString;
-
 //     setState(() {
 //       currentFiscal = latestFiscDay;
 //     });
-
 //     List<Map<String, dynamic>> data = await dbHelper.getReceiptsSubmittedToday(currentFiscal);
-
 //     setState(() {
 //       dayReceiptCounter = data;
 //     });
-
 //     int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
 //     int currentGlobalNo = latestReceiptGlobalNo + 1;
-
 //     setState(() {
 //       currentReceiptGlobalNo = currentGlobalNo.toString();
 //     });
-
 //     String getLatestReceiptHash = await dbHelper.getLatestReceiptHash();
-
-//     if (dayReceiptCounter.isEmpty) {
+//     if(dayReceiptCounter.isEmpty){
 //       receiptString = generateReceiptString(
 //         deviceID: deviceID,
 //         receiptType: "FISCALINVOICE",
@@ -3836,9 +3917,13 @@
 //         receiptDate: date,
 //         receiptTotal: totalAmount,
 //         receiptItems: receiptItems,
-//         getPreviousReceiptHash: "",
+//         getPreviousReceiptHash:"",
 //       );
-//     } else {
+//       print("Concatenated Receipt String:$receiptString");
+//       logToFile(receiptString);
+//       receiptString.trim();
+//     }
+//     else{
 //       receiptString = generateReceiptString(
 //         deviceID: deviceID,
 //         receiptType: "FISCALINVOICE",
@@ -3850,38 +3935,28 @@
 //         getPreviousReceiptHash: getLatestReceiptHash,
 //       );
 //     }
-
-//     print("Concatenated Receipt String: $receiptString");
-//     logToFile(receiptString);
-
-//     var bytes = utf8.encode(receiptString.trim());
+//   print("Concatenated Receipt String:$receiptString");
+//   receiptString.trim();
+//     var bytes = utf8.encode(receiptString);
 //     var digest = sha256.convert(bytes);
 //     final hash = base64.encode(digest.bytes);
-
 //     print(hash);
 //     logToFile(hash);
-//     // ✅ Return both
-//     return {
-//       "receiptString": receiptString,
-//       "hash": hash,
-//     };
+//     return hash;
 //   }
-
    
 //   //generate fiscal JSON
 //   Future<String> generateFiscalJSON() async {
 //     String encodedreceiptDeviceSignature_signature;
 //   try {
 //     print("Entered generateFiscalJSON");
+
 //     // Ensure signing does not fail
 //     DateTime now = DateTime.now();
 //     String formattedDate = DateFormat("yyyy-MM-ddTHH:mm:ss").format(now);
-//     final hashData = await generateHash(formattedDate);
-
 //     try {
 //       print("Using raw string for signing");
-//       //String data = await useRawString(formattedDate);
-//       String data = hashData['receiptString'].toString();
+//       String data = await useRawString(formattedDate);
 //       final byteData = await rootBundle.load('assets/private_key.pem');
 //       final buffer = byteData.buffer;
 //       // Write to a temp file
@@ -3911,6 +3986,8 @@
 
 //     int fiscalDayNo = await dbHelper.getlatestFiscalDay();
 //     int nextReceiptCounter = await dbHelper.getNextReceiptCounter(fiscalDayNo);
+   
+
 //     int nextInvoice = await dbHelper.getNextInvoiceId();
 //     int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
 //     int currentGlobalNo = latestReceiptGlobalNo + 1;
@@ -3924,8 +4001,9 @@
 //       return "{}";
 //     }
 
-//     //String hash = await generateHash(formattedDate);
-//     String hash = hashData['hash'].toString();
+
+
+//     String hash = await generateHash(formattedDate);
 //     print("Hash generated successfully");
 
 //     Map<String, dynamic> jsonData = {
@@ -4015,7 +4093,7 @@
 //     // var digest = sha256.convert(bytes);
 //     // final hashVerify = base64.encode(digest.bytes);
 //     // verifySignatureAndShowResult2(context, filePath, password, hashVerify, receiptDeviceSignature_signature.toString());
-//     File file = File("C:/FDMS-gateway/Files/jsonFile.txt");
+//     File file = File("C:/FMDS-gateway/Files/jsonFile.txt");
 //     await file.writeAsString(jsonString);
 //     print("Generated JSON: $jsonString");
 //     return jsonString;
@@ -4499,7 +4577,7 @@
 //   }
 
 // //submit receipts
-// Future<bool> submitReceipt() async {
+// Future<void> submitReceipt() async {
 //     String jsonString  = await generateFiscalJSON();
 //     final receiptJson = jsonEncode(jsonString);
 //     Get.snackbar(
@@ -4631,7 +4709,7 @@
 //             conflictAlgorithm: ConflictAlgorithm.replace,
 //           );
 //           //print("Data inserted successfully!");
-//           handleReceiptPrint(jsonData, qrurl, receiptQrData);
+//           //handleReceiptPrint(jsonData, qrurl, receiptQrData);
 //           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
 //           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
 //           receiptItems.clear();
@@ -4654,10 +4732,9 @@
 //             icon: const Icon(Icons.error),
 //           );
 //       }
-//       return true;
+      
 //     }
 //     else{
-//       //return false;
 //       try {
 //           final Database dbinit = await dbHelper.initDB();
 //           await dbinit.insert('submittedReceipts',
@@ -4691,7 +4768,7 @@
 //           );
 //           //print("Data inserted successfully!");
 //           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-//           handleReceiptPrint(jsonData, qrurl, receiptQrData);
+//           //handleReceiptPrint(jsonData, qrurl, receiptQrData);
 //           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
 //           //print58mmAdvanced(jsonData, qrurl);
 //             receiptItems.clear();
@@ -4752,7 +4829,7 @@
 //           totalAmount = 0.0;
 //           taxAmount = 0.0;
 //           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-//           handleReceiptPrint(jsonData, qrurl,receiptQrData);
+//           //handleReceiptPrint(jsonData, qrurl,receiptQrData);
 //           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
 //           totalAmount = 0.0;
 //           taxAmount = 0.0;
@@ -4815,7 +4892,7 @@
 //         totalAmount = 0.0;
 //         taxAmount = 0.0;
 //         //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-//         handleReceiptPrint(jsonData, qrurl,receiptQrData);
+//         //handleReceiptPrint(jsonData, qrurl,receiptQrData);
 //         //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
 //         totalAmount = 0.0;
 //         taxAmount = 0.0;

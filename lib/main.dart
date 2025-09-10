@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:decimal/decimal.dart';
 import 'package:fdmsgateway/common/button.dart';
 import 'package:fdmsgateway/database.dart';
 import 'package:fdmsgateway/fiscalization/closeday.dart';
@@ -41,7 +42,7 @@ void main() {
   sqfliteFfiInit(); 
   databaseFactory = databaseFactoryFfi;
   WidgetsFlutterBinding.ensureInitialized();
-  _startFolderWatcher();
+  //_startFolderWatcher();
   runApp(const MyApp());
 }
 
@@ -160,7 +161,6 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isProcessing = false;
   final Directory inputFolder = Directory(r'C:\Fiscal\Input');
   final Directory signedFolder = Directory(r'C:\Fiscal\Signed');
-  final Directory doneFolder = Directory(r'C:\Fiscal\Done');
   DatabaseHelper dbHelper =  DatabaseHelper();
   StreamSubscription<WatchEvent>? inputSub;
   StreamSubscription<WatchEvent>? signedSub;
@@ -1781,7 +1781,6 @@ Future<String> getConfig() async {
   }
 
   //======================== PRINT 80MM RECEIPT======================================================================
-
   Future<void> print80mmReceipt({
     required Map<String, dynamic> receipt,
     required String qrUrl,
@@ -1789,7 +1788,6 @@ Future<String> getConfig() async {
     Printer? selectedPrinter, // Optional silent print
   }) async {
     final pdf = pw.Document();
-
     String formattedQrData = formatString(qrData);   
     pdf.addPage(
       pw.MultiPage(
@@ -1797,7 +1795,7 @@ Future<String> getConfig() async {
         maxPages: 100,
         build: (pw.Context context) => [
           pw.Padding(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 15),
             child:
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1907,38 +1905,38 @@ Future<String> getConfig() async {
                 textAlign: pw.TextAlign.center,
               ),
               ),
-              // pw.Container(
-              //   alignment: pw.Alignment.center,
-              //   child: pw.Text(
-              //   "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
-              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              //   textAlign: pw.TextAlign.center,
-              // ),
-              // ),
-              // pw.Container(
-              //   alignment: pw.Alignment.center,
-              //   child: pw.Text(
-              //   "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
-              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              //   textAlign: pw.TextAlign.center,
-              // ),
-              // ),
-              // pw.Container(
-              //   alignment: pw.Alignment.center,
-              //   child: pw.Text(
-              //   "${receipt['buyerData']?['buyerContactS']['email'] ?? 'N/A'}",
-              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              //   textAlign: pw.TextAlign.center,
-              // ),
-              // ),
-              // pw.Container(
-              //   alignment: pw.Alignment.center,
-              //   child: pw.Text(
-              //   "${receipt['buyerData']?['buyerContactS']['phoneNo'] ?? 'N/A'}",
-              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              //   textAlign: pw.TextAlign.center,
-              // ),
-              // ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerContactS']['email'] ?? 'N/A'}",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                "${receipt['buyerData']?['buyerContactS']['phoneNo'] ?? 'N/A'}",
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+                textAlign: pw.TextAlign.center,
+              ),
+              ),
               pw.Divider(),
               pw.Text("Date: ${receipt['receiptDate'] ?? ''}",style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)),
               pw.Text("Currency: ${receipt['receiptCurrency'] ?? ''}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
@@ -2633,7 +2631,7 @@ Future<String> getConfig() async {
   ///
   ///
   void logToFile(String message) async {
-    final logFile = File('C:/FMDS-gateway/Files/log.txt'); // or better, use app data dir
+    final logFile = File('C:/FDMS-gateway/Files/log.txt'); // or better, use app data dir
     final timestamp = DateTime.now().toIso8601String();
     await logFile.writeAsString('[$timestamp] $message\n', mode: FileMode.append);
   }
@@ -2684,37 +2682,24 @@ Future<String> getConfig() async {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        print("200 response");
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print("response Data $responseData");
-        
-        String state =  responseData['status'];
-        print("state $state");
-        if(state == 'skipped'){
-            final destPath = path.join(doneFolder.path, path.basename(file.path));
-            await file.rename(destPath);
-            print("📁 Moved to Signed: ${path.basename(destPath)}");
-        }else{
-          final String documentType = responseData['document_type'];
-          if (isReceipt == 1) {
-          
+        final String documentType = responseData['document_type'];
+
+        if (isReceipt == 1) {
           if (documentType == 'receipt') {
             final List<dynamic> tableData = responseData['line_items'];
             final Map<String, dynamic> customerDetails = responseData['customer_details'];
             final Map<String, dynamic> totals = responseData['totals'];
             final buyerAddress = customerDetails['buyerAddress'];
-            
+
             setState(() {
-              //currentInvoiceSubtotal = totals['invoice_subtotal'];
-              print("results");
-              receipttotalVat = totals['total_vat'].toString();
-              
+              currentInvoiceSubtotal = totals['invoice_subtotal'];
+              receipttotalVat = totals['total_vat'];
               transactionCurrency = responseData['invoice_currency'];
               currentInvoiceNumber = responseData['invoice_number'];
-              
-              receiptinvoiceTotal = totals['invoice_total'].toString();
-              //paid = totals['paid'];
-              //change = totals['change'];
+              receiptinvoiceTotal = totals['invoice_total'];
+              paid = totals['paid'];
+              change = totals['change'];
 
               if (customerDetails['name'] == 'Cash' || customerDetails['name'] == null) {
                 selectedCustomer.clear();
@@ -2725,8 +2710,8 @@ Future<String> getConfig() async {
                   'customerTIN': customerDetails['tin'],
                   'customerPhone': customerDetails['phone'],
                   'customerEmail': customerDetails['email'] != "null"
-                     ? customerDetails['email']
-                     : 'noemail@email.com',
+                      ? customerDetails['email']
+                      : 'noemail@email.com',
                   'houseNO': buyerAddress['houseNo'],
                   'street': buyerAddress['street'],
                   'province': buyerAddress['province'],
@@ -2734,55 +2719,77 @@ Future<String> getConfig() async {
                 });
               }
             });
+
             print("adding items");
             await addReceiptItem(tableData);
             print("done with adding items");
             await generateFiscalJSON();
             await submitReceipt();
+
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
-            await stampInvoice(
-              File(destPath),
-              "$stampDayNo",                         // replace with your dynamic day number
-              "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-              "$stampQRData",
-              "$stampVerificationCode"          // replace with the actual QR data
-            );
+
           } else if (documentType == 'credit_note') {
             isReceiptCreditNote = 1;
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];
-            final Map<String, dynamic> totals = responseData['totals'];
-            //final Map<String, dynamic> totals = creditNoteDetails['creditNote_totals'];
+            //final Map<String, dynamic> totals = responseData['totals'];
+            final Map<String, dynamic> totals = creditNoteDetails['creditNote_totals'];
             final String reference = creditNoteDetails['reference_number'];
             final String reason = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
+
             currentInvoiceNumber = creditNoteDetails['credit_note_number'];
+
             setState(() {
               creditReason = reason;
               creditedInvoice = reference;
-              receiptinvoiceTotal = totals['invoice_total'].toString();
-              //receiptinvoiceTotal = totals['credit_total'];
-             // currentInvoiceSubtotal = totals['invoice_subtotal'];
-              //receipttotalVat = totals['total_vat'];
+              //receiptinvoiceTotal = totals['invoice_total'];
+              receiptinvoiceTotal = totals['credit_total'];
+              //currentInvoiceSubtotal = totals['invoice_subtotal'];
+              receipttotalVat = totals['total_vat'];
               //paid = totals['paid'];
             });
+
             await generateCreditFiscalJSON();
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
-            await stampInvoice(
-              File(destPath),
-              "$stampDayNo",                         // replace with your dynamic day number
-              "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-              "$stampQRData",
-              "$stampVerificationCode"          // replace with the actual QR data
-            );
           }
 
         } else {
           // Invoice branch
           if (documentType == 'invoice') {
+            // final List<dynamic> tableData = responseData['line_items'];
+            // final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
+
+            // setState(() {
+            //   invoiceDetails = invoiceDetailsInner;
+            //   transactionCurrency = invoiceDetailsInner['currency'];
+            //   currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
+
+            //   if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
+            //     selectedCustomer.clear();
+            //   } else {
+            //     selectedCustomer.add({
+            //       'customerName': invoiceDetailsInner['customer_name'],
+            //       'customerVAT': invoiceDetailsInner['buyer_vat'],
+            //       'customerTIN': invoiceDetailsInner['buyer_tin'],
+            //       'customerPhone': invoiceDetailsInner['phone'],
+            //       'customerEmail': invoiceDetailsInner['email'],
+            //     });
+            //   }
+            // });
+
+            // print("adding items");
+            // await addItem(tableData);
+            // print("done with adding items");
+            // await generateFiscalJSON();
+            // await submitReceipt();
+
+            // final destPath = path.join(signedFolder.path, path.basename(file.path));
+            // await file.rename(destPath);
+            // print("📁 Moved to Signed: ${path.basename(destPath)}");
             final List<dynamic> tableData = responseData['line_items'];
             final Map<String, dynamic> invoiceDetailsInner = responseData['totals'];
 
@@ -2803,12 +2810,12 @@ Future<String> getConfig() async {
               //   });
               // }
             });
-
             print("adding items");
             await addItem(tableData);
             print("done with adding items");
             await generateFiscalJSON();
             await submitReceipt();
+
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
@@ -2819,7 +2826,6 @@ Future<String> getConfig() async {
               "$stampQRData",
               "$stampVerificationCode"          // replace with the actual QR data
             );
-
           } else if (documentType == 'credit_note') {
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];
@@ -2837,180 +2843,8 @@ Future<String> getConfig() async {
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
-            await stampInvoice(
-              File(destPath),
-              "$stampDayNo",                         // replace with your dynamic day number
-              "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-              "$stampQRData",
-              "$stampVerificationCode"          // replace with the actual QR data
-            );
           }
         }
-        }
-        // final Map<String, dynamic> responseData = jsonDecode(response.body);
-        // final String documentType = responseData['document_type'];
-
-        // if (isReceipt == 1) {
-        //   if (documentType == 'receipt') {
-        //     final List<dynamic> tableData = responseData['line_items'];
-        //     final Map<String, dynamic> customerDetails = responseData['customer_details'];
-        //     final Map<String, dynamic> totals = responseData['totals'];
-        //     final buyerAddress = customerDetails['buyerAddress'];
-
-        //     setState(() {
-        //       currentInvoiceSubtotal = totals['invoice_subtotal'];
-        //       receipttotalVat = totals['total_vat'];
-        //       transactionCurrency = responseData['invoice_currency'];
-        //       currentInvoiceNumber = responseData['invoice_number'];
-        //       receiptinvoiceTotal = totals['invoice_total'];
-        //       paid = totals['paid'];
-        //       change = totals['change'];
-
-        //       if (customerDetails['name'] == 'Cash' || customerDetails['name'] == null) {
-        //         selectedCustomer.clear();
-        //       } else {
-        //         selectedCustomer.add({
-        //           'customerName': customerDetails['name'],
-        //           'customerVAT': customerDetails['vat_number'],
-        //           'customerTIN': customerDetails['tin'],
-        //           'customerPhone': customerDetails['phone'],
-        //           // 'customerEmail': customerDetails['email'] != "null"
-        //           //     ? customerDetails['email']
-        //           //     : 'noemail@email.com',
-        //           // 'houseNO': buyerAddress['houseNo'],
-        //           // 'street': buyerAddress['street'],
-        //           // 'province': buyerAddress['province'],
-        //           // 'city': buyerAddress['city']
-        //         });
-        //       }
-        //     });
-
-        //     print("adding items");
-        //     await addReceiptItem(tableData);
-        //     print("done with adding items");
-        //     await generateFiscalJSON();
-        //     await submitReceipt();
-
-        //     final destPath = path.join(signedFolder.path, path.basename(file.path));
-        //     await file.rename(destPath);
-        //     print("📁 Moved to Signed: ${path.basename(destPath)}");
-
-        //   } else if (documentType == 'credit_note') {
-        //     isReceiptCreditNote = 1;
-        //     final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
-        //     final List<dynamic> tableData = responseData['line_items'];
-        //     //final Map<String, dynamic> totals = responseData['totals'];
-        //     final Map<String, dynamic> totals = creditNoteDetails['creditNote_totals'];
-        //     final String reference = creditNoteDetails['reference_number'];
-        //     final String reason = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
-
-        //     currentInvoiceNumber = creditNoteDetails['credit_note_number'];
-
-        //     setState(() {
-        //       creditReason = reason;
-        //       creditedInvoice = reference;
-        //       //receiptinvoiceTotal = totals['invoice_total'];
-        //       receiptinvoiceTotal = totals['credit_total'];
-        //       //currentInvoiceSubtotal = totals['invoice_subtotal'];
-        //       receipttotalVat = totals['total_vat'];
-        //       //paid = totals['paid'];
-        //     });
-
-        //     await generateCreditFiscalJSON();
-        //     final destPath = path.join(signedFolder.path, path.basename(file.path));
-        //     await file.rename(destPath);
-        //     print("📁 Moved to Signed: ${path.basename(destPath)}");
-        //   }
-
-        // } else {
-        //   // Invoice branch
-        //   if (documentType == 'invoice') {
-        //     // final List<dynamic> tableData = responseData['line_items'];
-        //     // final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
-
-        //     // setState(() {
-        //     //   invoiceDetails = invoiceDetailsInner;
-        //     //   transactionCurrency = invoiceDetailsInner['currency'];
-        //     //   currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
-
-        //     //   if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-        //     //     selectedCustomer.clear();
-        //     //   } else {
-        //     //     selectedCustomer.add({
-        //     //       'customerName': invoiceDetailsInner['customer_name'],
-        //     //       'customerVAT': invoiceDetailsInner['buyer_vat'],
-        //     //       'customerTIN': invoiceDetailsInner['buyer_tin'],
-        //     //       'customerPhone': invoiceDetailsInner['phone'],
-        //     //       'customerEmail': invoiceDetailsInner['email'],
-        //     //     });
-        //     //   }
-        //     // });
-
-        //     // print("adding items");
-        //     // await addItem(tableData);
-        //     // print("done with adding items");
-        //     // await generateFiscalJSON();
-        //     // await submitReceipt();
-
-        //     // final destPath = path.join(signedFolder.path, path.basename(file.path));
-        //     // await file.rename(destPath);
-        //     // print("📁 Moved to Signed: ${path.basename(destPath)}");
-        //     final List<dynamic> tableData = responseData['line_items'];
-        //     final Map<String, dynamic> invoiceDetailsInner = responseData['totals'];
-
-        //     setState(() {
-        //       invoiceDetails = invoiceDetailsInner;
-        //       transactionCurrency = responseData['currency'];
-        //       currentInvoiceNumber = responseData['invoice_number'];
-
-        //       // if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-        //       //   selectedCustomer.clear();
-        //       // } else {
-        //       //   selectedCustomer.add({
-        //       //     'customerName': invoiceDetailsInner['customer_name'],
-        //       //     'customerVAT': invoiceDetailsInner['buyer_vat'],
-        //       //     'customerTIN': invoiceDetailsInner['buyer_tin'],
-        //       //     'customerPhone': invoiceDetailsInner['phone'],
-        //       //     'customerEmail': invoiceDetailsInner['email'],
-        //       //   });
-        //       // }
-        //     });
-
-        //     print("adding items");
-        //     await addItem(tableData);
-        //     print("done with adding items");
-        //     await generateFiscalJSON();
-        //     await submitReceipt();
-
-        //     final destPath = path.join(signedFolder.path, path.basename(file.path));
-        //     await file.rename(destPath);
-        //     print("📁 Moved to Signed: ${path.basename(destPath)}");
-        //     await stampInvoice(
-        //       File(destPath),
-        //       "$stampDayNo",                         // replace with your dynamic day number
-        //       "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-        //       "$stampQRData",
-        //       "$stampVerificationCode"          // replace with the actual QR data
-        //     );
-        //   } else if (documentType == 'credit_note') {
-        //     final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
-        //     final List<dynamic> tableData = responseData['line_items'];
-        //     final String reference = creditNoteDetails['reference_number'];
-        //     final String reason = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
-
-        //     currentInvoiceNumber = creditNoteDetails['credit_note_number'];
-
-        //     setState(() {
-        //       creditReason = reason;
-        //       creditedInvoice = reference;
-        //     });
-
-        //     await generateCreditFiscalJSON();
-        //     final destPath = path.join(signedFolder.path, path.basename(file.path));
-        //     await file.rename(destPath);
-        //     print("📁 Moved to Signed: ${path.basename(destPath)}");
-        //   }
-        // }
       } else {
         print("❌ Server Error: ${response.statusCode}");
       }
@@ -3047,7 +2881,7 @@ Future<String> getConfig() async {
     return {
       ...tax,
       "salesAmountWithTax": -1 * (double.tryParse(tax["salesAmountWithTax"].toString()) ?? 0.0),
-      "taxAmount": tax["taxAmount"] != "0" && tax["taxAmount"] !="0.00" ? (-1 * double.parse(tax["taxAmount"])).toStringAsFixed(2) : tax["taxAmount"].toString(),
+      "taxAmount": tax["taxAmount"] != "0" && tax["taxAmount"] !="0.00" ? (-1 * double.parse(tax["taxAmount"].toString())).toStringAsFixed(2) : tax["taxAmount"].toString(),
     };
   }).toList();
 
@@ -3057,7 +2891,7 @@ Future<String> getConfig() async {
     return {
       ...payment,
       "paymentAmount":
-          (-1 * double.parse(payment["paymentAmount"])).toStringAsFixed(2),
+          (-1 * double.parse(payment["paymentAmount"].toString())).toStringAsFixed(2),
       
     };
   }).toList();
@@ -3067,14 +2901,14 @@ Future<String> getConfig() async {
     return {
       ...line,
       "receiptLineTotal":
-          (-1 * double.parse(line["receiptLineTotal"])).toStringAsFixed(2),
-      "receiptLinePrice": (-1 * double.parse(line["receiptLinePrice"])).toStringAsFixed(2) ,
+          (-1 * double.parse(line["receiptLineTotal"].toString())).toStringAsFixed(2),
+      "receiptLinePrice": (-1 * double.parse(line["receiptLinePrice"].toString())).toStringAsFixed(2) ,
     };
   }).toList();
 
   // 3. Negate receiptTotal
   creditNoteBody["receiptTotal"] =
-      (-1 * double.parse(creditNoteBody["receiptTotal"])).toStringAsFixed(2);
+      (-1 * double.parse(creditNoteBody["receiptTotal"].toString())).toStringAsFixed(2);
 
   // Update receiptGlobalNo, receiptCounter, receiptDate, and add receiptNotes
   creditNoteBody["receiptGlobalNo"] = int.parse(newReceiptGlobalNo);
@@ -3347,7 +3181,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl,invoiceId);
-            //handleReceiptPrint(jsonData, qrurl, creditQrData);
+            handleReceiptPrint(jsonData, qrurl, creditQrData);
            // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             taxAmount = 0.0;
@@ -3403,7 +3237,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            //handleReceiptPrint(jsonData, qrurl, creditQrData);
+            handleReceiptPrint(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 
@@ -3460,7 +3294,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            //handleReceiptPrint(jsonData, qrurl, creditQrData);
+            handleReceiptPrint(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             taxAmount = 0.0;
@@ -3518,7 +3352,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            //handleReceiptPrint(jsonData, qrurl, creditQrData);
+            handleReceiptPrint(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             taxAmount = 0.0;
@@ -3574,7 +3408,7 @@ Future<void> generateCreditFiscalJSON() async{
         );
       }
     }
-    File file = File("C:/FMDS-gateway/Files/jsonFile.txt");
+    File file = File("C:/FDMS-gateway/Files/jsonFile.txt");
     await file.writeAsString(creditNoteJson);
     print(creditNoteJson);
 
@@ -3651,6 +3485,7 @@ Future<void> addItem(List<dynamic> tableData) async {
 
     newItems.add({
       'productName': item['description'] ?? 'Unknown',
+      'unitPrice': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
       'price': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
       'quantity': 1,
       'total': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
@@ -3670,6 +3505,13 @@ Future<void> addItem(List<dynamic> tableData) async {
   print("receiptItems: $receiptItems");
 }
 
+
+double roundTo2(double value) {
+  final Decimal decimalValue = Decimal.parse(value.toString());
+  final Decimal rounded = decimalValue.round(scale: 2);
+  return double.parse(rounded.toString());
+}
+
  //add to receipt items
 Future<void> addReceiptItem(List<dynamic> tableData) async {
   final List<Map<String, dynamic>> lineItems = tableData.cast<Map<String, dynamic>>();
@@ -3683,53 +3525,54 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
 
     double unitPrice = (item['unit_price'] is String)
         ? double.tryParse(item['unit_price']) ?? 0
-        : (item['Unit Price'] ?? 0).toDouble();
+        : (item['unit_price'] ?? 0).toDouble();
 
     int quantity = (item['quantity'] is String)
         ? int.tryParse(item['quantity']) ?? 1
         : (item['quantity'] ?? 1);
 
-    double totalPrice = double.tryParse(item['amount_incl'].toString()) ?? 0;
-    double itemTotal = totalPrice / quantity;
+    // double totalPrice = double.tryParse(item['amount_incl'].toString()) ?? 0;
+    // double itemTotal = totalPrice / quantity;
+
+    double lineItemTax = 0;
+    double itemTotal = 0 ;
+    double totalPrice =  0 ;
 
     double itemTax;
     int taxID;
     String taxCode;
     String taxPercent;
     
-
-    
     final vatValue = item['vat'];
     final taxLetter = item['tax_letter'];
     if (taxLetter=='T' ) {
+      lineItemTax = roundTo2(unitPrice * 0.15);
+      itemTotal = roundTo2( unitPrice + lineItemTax);
+      totalPrice = roundTo2(itemTotal * quantity);
       taxID = 1;
       taxPercent = "15.00";
       taxCode = "A";
-      itemTax = totalPrice - (totalPrice / 1.15);
+      itemTax = roundTo2(unitPrice * quantity * 0.15);
       salesAmountwithTax += totalPrice;
-    } else if (taxLetter == 'X') {
-      // taxID = 3;
-      // taxPercent = "0";
-      // taxCode = "C";
-      // itemTax = 0;
-      taxID =3;
-      taxPercent = "0";
-      taxCode = "C";
-      itemTax = 0;
-    } else {
-      // taxID = 2;
-      // taxPercent = "0.00";
-      // taxCode = "B";
-      // itemTax = totalPrice * double.parse(taxPercent);
-      taxID = 2;
+    } else if (taxLetter == 'Z') {
+      itemTotal = unitPrice;
+      totalPrice = itemTotal * quantity;
+      taxID =2;
       taxPercent = "0.00";
       taxCode = "B";
       itemTax = 0;
+    } else {
+      itemTotal = unitPrice;
+      totalPrice = itemTotal * quantity;
+      taxID = 3;
+      taxPercent = "0";
+      taxCode = "C";
+      itemTax = 0;
     }
-
     print("adding new items");
     newItems.add({
       'productName': item['description'] ?? item['hs_code'] ?? 'Unknown',
+      'unitPrice': unitPrice,
       'price': itemTotal,
       'quantity': quantity,
       'total': totalPrice,
@@ -3749,62 +3592,129 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
   print("receiptItems: $receiptItems");
 }
 
-  String generateTaxSummary(List<dynamic> receiptItems) {
-  Map<int, Map<String, dynamic>> taxGroups = {};
+//   String generateTaxSummary(List<dynamic> receiptItems) {
+//   Map<int, Map<String, dynamic>> taxGroups = {};
 
-  for (var item in receiptItems) {
-    int taxID = item["taxID"];
-    double total = item["total"];
-    String taxCode = item["taxCode"];
+//   for (var item in receiptItems) {
+//     int taxID = item["taxID"];
+//     double total = item["total"];
+//     String taxCode = item["taxCode"];
+//     double unitPrice = item["unitPrice"];
+//     int quantity = item["quantity"];
     
-    // Preserve empty taxPercent when missing
-    String? taxPercentValue = item["taxPercent"];
-    double taxPercent = (taxPercentValue == null || taxPercentValue == "")
-        ? 0.0
-        : double.parse(taxPercentValue);
+//     // Preserve empty taxPercent when missing
+//     String? taxPercentValue = item["taxPercent"];
+//     double taxPercent = (taxPercentValue == null || taxPercentValue == "")
+//         ? 0.0
+//         : double.parse(taxPercentValue);
 
-    if (!taxGroups.containsKey(taxID)) {
-      taxGroups[taxID] = {
-        "taxCode": taxCode,
-        "taxPercent": taxPercentValue == null || taxPercentValue == "" 
-          ? 0
-          : (taxPercent % 1 == 0 
-              ? "${taxPercent.toInt()}.00" 
-              : taxPercent.toStringAsFixed(2)),
-        "taxAmount": 0.0,
-        "salesAmountWithTax": 0.0
-      };
+//     if (!taxGroups.containsKey(taxID)) {
+//       taxGroups[taxID] = {
+//         "taxCode": taxCode,
+//         "taxPercent": taxPercentValue == null || taxPercentValue == "" 
+//           ? 0
+//           : (taxPercent % 1 == 0 
+//               ? "${taxPercent.toInt()}.00" 
+//               : taxPercent.toStringAsFixed(2)),
+//         "taxAmount": 0.0,
+//         "salesAmountWithTax": 0.0
+//       };
+//     }
+//     double taxAmount ;
+//     if(taxPercentValue=="15.00"){
+//       //taxAmount = total - double.parse((total / 1.15).toStringAsFixed(2));
+//       taxAmount = double.tryParse((unitPrice * 0.15 * quantity).toStringAsFixed(2))!;
+//     }else{
+//       taxAmount = total * 0;
+//     }
+//     taxGroups[taxID]!["taxAmount"] += taxAmount;
+//     taxGroups[taxID]!["salesAmountWithTax"] += total;
+//   }
+
+//   List<Map<String, dynamic>> sortedTaxes = taxGroups.values.toList()
+//     ..sort((a, b) => a["taxCode"].compareTo(b["taxCode"]));
+
+//   // return sortedTaxes.map((tax) {
+//   //   return "${tax["taxCode"]}${tax["taxPercent"]}${(tax["taxAmount"] * 100).round().toString()}${(tax["salesAmountWithTax"] * 100).round().toString()}";
+//   // }).join("");
+//   return sortedTaxes.map((tax) {
+//     final taxCode = tax["taxCode"];
+//     final taxPercent = tax["taxPercent"];
+//     final taxAmount = (tax["taxAmount"] * 100).round().toString();
+//     final salesAmount = (tax["salesAmountWithTax"] * 100).round().toString();
+
+//     // Omit taxPercent for taxCode A
+//     if (taxCode == "C") {
+//       return "$taxCode$taxAmount$salesAmount";
+//     }
+
+//     return "$taxCode$taxPercent$taxAmount$salesAmount";
+//   }).join("");
+// }
+
+  String generateTaxSummary(List<dynamic> receiptItems) {
+    Map<int, Map<String, dynamic>> taxGroups = {};
+    
+    for (var item in receiptItems) {
+      int taxID = item["taxID"];
+      print("date generating tax summary");
+      double total = item["total"];
+      double unitPrice = item["unitPrice"];
+      String taxCode = item["taxCode"];
+      
+      // Preserve empty taxPercent when missing
+      String? taxPercentValue = item["taxPercent"];
+      double taxPercent = (taxPercentValue == null || taxPercentValue == "")
+          ? 0.0
+          : double.parse(taxPercentValue);
+      
+      if (!taxGroups.containsKey(taxID)) {
+        taxGroups[taxID] = {
+          "taxCode": taxCode,
+          "taxPercent": taxPercentValue == null || taxPercentValue == "" 
+            ? 0
+            : (taxPercent % 1 == 0 
+                ? "${taxPercent.toInt()}.00" 
+                : taxPercent.toStringAsFixed(2)),
+          "taxAmount": 0.0,
+          "salesAmountWithTax": 0.0
+        };
+      }
+      double taxAmount ;
+      if(taxPercentValue=="15.00"){
+        taxAmount = total - double.parse((total / 1.15).toString());
+      }else{
+        taxAmount = total * 0;
+      }
+      taxGroups[taxID]!["taxAmount"] += taxAmount;
+      taxGroups[taxID]!["salesAmountWithTax"] += total;
     }
-    double taxAmount ;
-    if(taxPercentValue=="15.00"){
-      taxAmount = total - double.parse((total / 1.15).toStringAsFixed(2));
-    }else{
-      taxAmount = total * 0;
-    }
-    taxGroups[taxID]!["taxAmount"] += taxAmount;
-    taxGroups[taxID]!["salesAmountWithTax"] += total;
+    
+    List<Map<String, dynamic>> sortedTaxes = taxGroups.values.toList()
+      ..sort((a, b) => a["taxCode"].compareTo(b["taxCode"]));
+
+    
+
+
+    // return sortedTaxes.map((tax) {
+    //   return "${tax["taxCode"]}${tax["taxPercent"]}${(tax["taxAmount"] * 100).round().toString()}${(tax["salesAmountWithTax"] * 100).round().toString()}";
+    // }).join("");
+    return sortedTaxes.map((tax) {
+      double taxAmountcents = roundTo2(tax["taxAmount"]);
+      double salesAmountcents = roundTo2(tax["salesAmountWithTax"]);
+      final taxCode = tax["taxCode"];
+      final taxPercent = tax["taxPercent"];
+      final taxAmount = (taxAmountcents * 100).round().toString();
+      final salesAmount = (salesAmountcents * 100).round().toString();
+
+      // Omit taxPercent for taxCode A
+      if (taxCode == "C") {
+        return "$taxCode$taxAmount$salesAmount";
+      }
+
+      return "$taxCode$taxPercent$taxAmount$salesAmount";
+    }).join("");
   }
-
-  List<Map<String, dynamic>> sortedTaxes = taxGroups.values.toList()
-    ..sort((a, b) => a["taxCode"].compareTo(b["taxCode"]));
-
-  // return sortedTaxes.map((tax) {
-  //   return "${tax["taxCode"]}${tax["taxPercent"]}${(tax["taxAmount"] * 100).round().toString()}${(tax["salesAmountWithTax"] * 100).round().toString()}";
-  // }).join("");
-  return sortedTaxes.map((tax) {
-    final taxCode = tax["taxCode"];
-    final taxPercent = tax["taxPercent"];
-    final taxAmount = (tax["taxAmount"] * 100).round().toString();
-    final salesAmount = (tax["salesAmountWithTax"] * 100).round().toString();
-
-    // Omit taxPercent for taxCode A
-    if (taxCode == "C") {
-      return "$taxCode$taxAmount$salesAmount";
-    }
-
-    return "$taxCode$taxPercent$taxAmount$salesAmount";
-  }).join("");
-}
 
 
   String generateReceiptString({
@@ -3869,76 +3779,113 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
       print("Concatenated Receipt String: $receiptString");
       logToFile(receiptString);
       return receiptString;
-    }
-    
-  
+    }  
   }
 
-  //gnerate receipt taxes
-    List<Map<String, dynamic>> generateReceiptTaxes(List<dynamic> receiptItems) {
-  Map<int, Map<String, dynamic>> taxGroups = {}; // Store tax summaries
+//   //gnerate receipt taxes
+//     List<Map<String, dynamic>> generateReceiptTaxes(List<dynamic> receiptItems) {
+//   Map<int, Map<String, dynamic>> taxGroups = {}; // Store tax summaries
 
-  for (var item in receiptItems) {
-    int taxID = item["taxID"];
-    String taxPercent = item["taxPercent"];
-    double total = item["total"];
+//   for (var item in receiptItems) {
+//     int taxID = item["taxID"];
+//     String taxPercent = item["taxPercent"];
+//     double total = item["total"];
+//     double unitPrice = item["unitPrice"];
+//     int quantity = item["quantity"];
 
-    if (!taxGroups.containsKey(taxID)) {
-      taxGroups[taxID] = {
-        "taxID": taxID,
-        "taxPercent": taxPercent.isEmpty ? "" : taxPercent, // Leave blank if empty
-        "taxCode": item["taxCode"],
-        "taxAmount": 0.0,
-        "salesAmountWithTax": 0.0
+//     if (!taxGroups.containsKey(taxID)) {
+//       taxGroups[taxID] = {
+//         "taxID": taxID,
+//         "taxPercent": taxPercent.isEmpty ? "" : taxPercent, // Leave blank if empty
+//         "taxCode": item["taxCode"],
+//         "taxAmount": 0.0,
+//         "salesAmountWithTax": 0.0
+//       };
+//     }
+//     double taxAmount;
+//     if(taxPercent.isEmpty){
+//       taxAmount = 0.00;
+//     }
+//     else if(taxPercent=="15.00"){
+//       taxAmount = double.tryParse((unitPrice * 0.15 * quantity).toStringAsFixed(2))!;
+//     }
+//     else{
+//       taxAmount = total * 0;
+//     }
+//     taxGroups[taxID]!["taxAmount"] += taxAmount;
+//     taxGroups[taxID]!["salesAmountWithTax"] += total;
+//   }
+//   return taxGroups.values.map((tax) {
+//     final taxID = tax["taxID"];
+//     final taxCode = tax["taxCode"];
+//     final isGroupA = (taxCode == "C" || taxID == 3);
+    
+//     double tax1 = (tax["salesAmountWithTax"] is String)
+//     ? double.tryParse(tax["salesAmountWithTax"]) ?? 0
+//     : (tax["salesAmountWithTax"] ?? 0).toDouble();
+
+//     return {
+//       "taxID": taxID.toString(),
+//       if (!isGroupA) "taxPercent": tax["taxPercent"], // Omit if group C
+//       "taxCode": taxCode,
+//       "taxAmount": isGroupA ? "0" : tax["taxAmount"].toStringAsFixed(2),
+//       "salesAmountWithTax": tax1.toStringAsFixed(2),
+//     };
+//   }).toList();
+// }
+
+  List<Map<String, dynamic>> generateReceiptTaxes(List<dynamic> receiptItems) {
+    Map<int, Map<String, dynamic>> taxGroups = {}; // Store tax summaries
+
+    for (var item in receiptItems) {
+      int taxID = item["taxID"];
+      String taxPercent = item["taxPercent"];
+      double total = item["total"];
+
+      if (!taxGroups.containsKey(taxID)) {
+        taxGroups[taxID] = {
+          "taxID": taxID,
+          "taxPercent": taxPercent.isEmpty ? "" : taxPercent, // Leave blank if empty
+          "taxCode": item["taxCode"],
+          "taxAmount": 0.0,
+          "salesAmountWithTax": 0.0
+        };
+      }
+      double taxAmount;
+      double taxamountpre;
+      double taxAmountfinal = 0;
+      double totalfinal = 0 ;
+      if(taxPercent.isEmpty){
+        taxAmount = 0.00;
+      }
+      else if(taxPercent=="15.00"){
+        taxAmount = total - double.parse((total / 1.15).toString());
+      }
+      else{
+        taxAmount = total * 0;
+      }
+      taxGroups[taxID]!["taxAmount"] += taxAmount;
+      taxGroups[taxID]!["salesAmountWithTax"] += total;
+
+    }
+    return taxGroups.values.map((tax) {
+      final taxID = tax["taxID"];
+      final taxCode = tax["taxCode"];
+      final isGroupA = (taxCode == "C" || taxID == 3);
+      
+      double tax1 = (tax["salesAmountWithTax"] is String)
+      ? double.tryParse(tax["salesAmountWithTax"]) ?? 0
+      : (tax["salesAmountWithTax"] ?? 0).toDouble();
+
+      return {
+        "taxID": taxID.toString(),
+        if (!isGroupA) "taxPercent": tax["taxPercent"], // Omit if group C
+        "taxCode": taxCode,
+        "taxAmount": isGroupA ? "0" : roundTo2(tax["taxAmount"]),
+        "salesAmountWithTax": roundTo2(tax1),
       };
-    }
-
-    // Calculate tax amount
-    //double taxAmount = taxPercent.isEmpty
-      //  ? 0.00  // If taxPercent is empty, set taxAmount to 0.00
-       // : total - double.parse((total / 1.15).toString());
-    double taxAmount;
-    if(taxPercent.isEmpty){
-      taxAmount = 0.00;
-    }
-    else if(taxPercent=="15.00"){
-      taxAmount = total - double.parse((total / 1.15).toString());
-    }
-    else{
-      taxAmount = total * 0;
-    }
-    taxGroups[taxID]!["taxAmount"] += taxAmount;
-    taxGroups[taxID]!["salesAmountWithTax"] += total;
+    }).toList();
   }
-
-  // Convert map to list and round values
-  // return taxGroups.values.map((tax) {
-  //   return {
-  //     "taxID": tax["taxID"],
-  //     "taxPercent": tax["taxPercent"],  // Blank if empty
-  //     "taxCode": tax["taxCode"],
-  //     "taxAmount": tax["taxAmount"].toStringAsFixed(2), // Rounded to 2 decimal places
-  //     "salesAmountWithTax": tax["salesAmountWithTax"],
-  //   };
-  // }).toList();
-  return taxGroups.values.map((tax) {
-    final taxID = tax["taxID"];
-    final taxCode = tax["taxCode"];
-    final isGroupA = (taxCode == "C" || taxID == 3);
-    
-    double tax1 = (tax["salesAmountWithTax"] is String)
-    ? double.tryParse(tax["salesAmountWithTax"]) ?? 0
-    : (tax["salesAmountWithTax"] ?? 0).toDouble();
-
-    return {
-      "taxID": taxID.toString(),
-      if (!isGroupA) "taxPercent": tax["taxPercent"], // Omit if group C
-      "taxCode": taxCode,
-      "taxAmount": isGroupA ? "0" : tax["taxAmount"].toStringAsFixed(2),
-      "salesAmountWithTax": tax1.toStringAsFixed(2),
-    };
-  }).toList();
-}
 
   //generate hash
   generateHash(String date) async {
@@ -4007,9 +3954,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     try {
       print("Using raw string for signing");
       String data = await useRawString(formattedDate);
-      //List<String>? signature = await getSignatureSignature(data);
-      //receiptDeviceSignature_signature_hex = signature?[0];
-      //receiptDeviceSignature_signature  = signature?[1];
       final byteData = await rootBundle.load('assets/private_key.pem');
       final buffer = byteData.buffer;
       // Write to a temp file
@@ -4039,8 +3983,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
 
     int fiscalDayNo = await dbHelper.getlatestFiscalDay();
     int nextReceiptCounter = await dbHelper.getNextReceiptCounter(fiscalDayNo);
-   
-
     int nextInvoice = await dbHelper.getNextInvoiceId();
     int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
     int currentGlobalNo = latestReceiptGlobalNo + 1;
@@ -4053,8 +3995,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
       Get.snackbar("Tax Calculation Error", "$e", snackPosition: SnackPosition.TOP);
       return "{}";
     }
-
-
 
     String hash = await generateHash(formattedDate);
     print("Hash generated successfully");
@@ -4109,22 +4049,22 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
           "signature": receiptDeviceSignature_signature,
           "hash": hash,
         },
-        // "buyerData": {
-        //   "VATNumber": selectedCustomer.isNotEmpty? selectedCustomer[0]['customerVAT'].toString() : "000000000",
-        //   "buyerTradeName":  selectedCustomer.isNotEmpty? selectedCustomer[0]['customerName'].toString() : "Cash Sale",
-        //   "buyerTIN": selectedCustomer.isNotEmpty? selectedCustomer[0]['customerTIN'].toString() : "0000000000",
-        //   "buyerRegisterName": selectedCustomer.isNotEmpty? selectedCustomer[0]['customerName'].toString() : "Cash Sale",
-        //   "buyerAddress": {
-        //     'province' : selectedCustomer.isNotEmpty? selectedCustomer[0]['province'].toString() : "Zimbabwe",
-        //     'city' : selectedCustomer.isNotEmpty? selectedCustomer[0]['city'].toString() : "Zimbawe",
-        //     'street': selectedCustomer.isNotEmpty? selectedCustomer[0]['street'].toString() : "Zimbabwe",
-        //     'houseNo': selectedCustomer.isNotEmpty? selectedCustomer[0]['houseNO'].toString() : "0000",
-        //   },
-        //   "buyerContactS":{
-        //     "email" : selectedCustomer.isNotEmpty? selectedCustomer[0]['customerEmail'].toString() : "buyer@buyer.com",
-        //     "phoneNo":selectedCustomer.isNotEmpty? selectedCustomer[0]['customerPhone'].toString() : "0000000000"
-        //   }
-        // },
+        "buyerData": {
+          "VATNumber": selectedCustomer.isNotEmpty? selectedCustomer[0]['customerVAT'].toString() : "000000000",
+          "buyerTradeName":  selectedCustomer.isNotEmpty? selectedCustomer[0]['customerName'].toString() : "Cash Sale",
+          "buyerTIN": selectedCustomer.isNotEmpty? selectedCustomer[0]['customerTIN'].toString() : "0000000000",
+          "buyerRegisterName": selectedCustomer.isNotEmpty? selectedCustomer[0]['customerName'].toString() : "Cash Sale",
+          "buyerAddress": {
+            'province' : selectedCustomer.isNotEmpty? selectedCustomer[0]['province'].toString() : "Zimbabwe",
+            'city' : selectedCustomer.isNotEmpty? selectedCustomer[0]['city'].toString() : "Zimbawe",
+            'street': selectedCustomer.isNotEmpty? selectedCustomer[0]['street'].toString() : "Zimbabwe",
+            'houseNo': selectedCustomer.isNotEmpty? selectedCustomer[0]['houseNO'].toString() : "0000",
+          },
+          "buyerContactS":{
+            "email" : selectedCustomer.isNotEmpty? selectedCustomer[0]['customerEmail'].toString() : "buyer@buyer.com",
+            "phoneNo":selectedCustomer.isNotEmpty? selectedCustomer[0]['customerPhone'].toString() : "0000000000"
+          }
+        },
         "receiptTotal": totalAmount.toStringAsFixed(2),
         "receiptLinesTaxInclusive": true,
         "invoiceNo": currentInvoiceNumber.toString() ,
@@ -4146,7 +4086,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     // var digest = sha256.convert(bytes);
     // final hashVerify = base64.encode(digest.bytes);
     // verifySignatureAndShowResult2(context, filePath, password, hashVerify, receiptDeviceSignature_signature.toString());
-    File file = File("C:/FMDS-gateway/Files/jsonFile.txt");
+    File file = File("C:/FDMS-gateway/Files/jsonFile.txt");
     await file.writeAsString(jsonString);
     print("Generated JSON: $jsonString");
     return jsonString;
@@ -4666,7 +4606,7 @@ Future<void> submitReceipt() async {
       double totalNonVAT = 0.0;
       double totalExempt = 0.0;
       for (var items in totals){
-        double sum = double.tryParse(items['salesAmountWithTax'])!;
+        double sum = double.tryParse(items['salesAmountWithTax'].toString())!;
         int? taxId = int.tryParse(items['taxID']);
         if(taxId == 1){
           total15VAT += sum;
@@ -4762,7 +4702,7 @@ Future<void> submitReceipt() async {
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
           //print("Data inserted successfully!");
-          //handleReceiptPrint(jsonData, qrurl, receiptQrData);
+          handleReceiptPrint(jsonData, qrurl, receiptQrData);
           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
           receiptItems.clear();
@@ -4821,7 +4761,7 @@ Future<void> submitReceipt() async {
           );
           //print("Data inserted successfully!");
           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-          //handleReceiptPrint(jsonData, qrurl, receiptQrData);
+          handleReceiptPrint(jsonData, qrurl, receiptQrData);
           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
           //print58mmAdvanced(jsonData, qrurl);
             receiptItems.clear();
@@ -4882,7 +4822,7 @@ Future<void> submitReceipt() async {
           totalAmount = 0.0;
           taxAmount = 0.0;
           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-          //handleReceiptPrint(jsonData, qrurl,receiptQrData);
+          handleReceiptPrint(jsonData, qrurl,receiptQrData);
           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
           totalAmount = 0.0;
           taxAmount = 0.0;
@@ -4945,7 +4885,7 @@ Future<void> submitReceipt() async {
         totalAmount = 0.0;
         taxAmount = 0.0;
         //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-        //handleReceiptPrint(jsonData, qrurl,receiptQrData);
+        handleReceiptPrint(jsonData, qrurl,receiptQrData);
         //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
         totalAmount = 0.0;
         taxAmount = 0.0;
@@ -5681,6 +5621,7 @@ Future<(
     final isCredit = receiptType != 'FISCALINVOICE';
 
     for (final t in r['receiptTaxes'] as List<dynamic>) {
+
       final rawTaxAmt = t['taxAmount'];
       final rawSales = t['salesAmountWithTax'];
       final taxAmt = rawTaxAmt is num ? rawTaxAmt.toDouble() : double.tryParse(rawTaxAmt.toString()) ?? 0;
@@ -5948,10 +5889,3 @@ class DatabaseBackupService{
 
 
 }
-
-
-
-
-
-
-

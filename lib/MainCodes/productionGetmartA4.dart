@@ -42,7 +42,7 @@
 //   sqfliteFfiInit(); 
 //   databaseFactory = databaseFactoryFfi;
 //   WidgetsFlutterBinding.ensureInitialized();
-//   //_startFolderWatcher();
+//   _startFolderWatcher();
 //   runApp(const MyApp());
 // }
 
@@ -2769,8 +2769,8 @@
 
 //             setState(() {
 //               invoiceDetails = invoiceDetailsInner;
-//               transactionCurrency = responseData['currency'];
-//               currentInvoiceNumber = responseData['invoice_number'];
+//               transactionCurrency = invoiceDetailsInner['currency'];
+//               currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
 
 //               if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
 //                 selectedCustomer.clear();
@@ -3171,8 +3171,8 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl,invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
-//            // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             taxAmount = 0.0;
 //             currentReceiptGlobalNo = "";
@@ -3227,7 +3227,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 
@@ -3284,7 +3284,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 //             taxAmount = 0.0;
@@ -3342,7 +3342,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 //             taxAmount = 0.0;
@@ -4604,7 +4604,7 @@
 //             conflictAlgorithm: ConflictAlgorithm.replace,
 //           );
 //           //print("Data inserted successfully!");
-//           handleReceiptPrint(jsonData, qrurl, receiptQrData);
+//           //handleReceiptPrint(jsonData, qrurl, receiptQrData);
 //           //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
 //           //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
 //           receiptItems.clear();
@@ -4673,7 +4673,7 @@
 //         totalAmount = 0.0;
 //         taxAmount = 0.0;
 //         //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-//         handleReceiptPrint(jsonData, qrurl,receiptQrData);
+//         //handleReceiptPrint(jsonData, qrurl,receiptQrData);
 //         //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
 //         totalAmount = 0.0;
 //         taxAmount = 0.0;

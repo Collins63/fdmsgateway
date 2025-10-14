@@ -3183,7 +3183,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl,invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //            // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             taxAmount = 0.0;
@@ -3239,7 +3239,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 
@@ -3296,7 +3296,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 //             taxAmount = 0.0;
@@ -3354,7 +3354,7 @@
 //             },conflictAlgorithm: ConflictAlgorithm.replace);
 //             print("Data inserted successfully!");
 //             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-//             handleReceiptPrint(jsonData, qrurl, creditQrData);
+//             //handleReceiptPrint(jsonData, qrurl, creditQrData);
 //             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
 //             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 //             taxAmount = 0.0;
@@ -3891,24 +3891,31 @@
 //   }
 
 //   //generate hash
-//   generateHash(String date) async {
+//   Future<Map<String, String>> generateHash(String date) async {
 //     String saleCurrency = transactionCurrency.toString();
 //     int latestFiscDay = await dbHelper.getlatestFiscalDay();
 //     String receiptString;
+
 //     setState(() {
 //       currentFiscal = latestFiscDay;
 //     });
+
 //     List<Map<String, dynamic>> data = await dbHelper.getReceiptsSubmittedToday(currentFiscal);
+
 //     setState(() {
 //       dayReceiptCounter = data;
 //     });
+
 //     int latestReceiptGlobalNo = await dbHelper.getLatestReceiptGlobalNo();
 //     int currentGlobalNo = latestReceiptGlobalNo + 1;
+
 //     setState(() {
 //       currentReceiptGlobalNo = currentGlobalNo.toString();
 //     });
+
 //     String getLatestReceiptHash = await dbHelper.getLatestReceiptHash();
-//     if(dayReceiptCounter.isEmpty){
+
+//     if (dayReceiptCounter.isEmpty) {
 //       receiptString = generateReceiptString(
 //         deviceID: deviceID,
 //         receiptType: "FISCALINVOICE",
@@ -3917,13 +3924,9 @@
 //         receiptDate: date,
 //         receiptTotal: totalAmount,
 //         receiptItems: receiptItems,
-//         getPreviousReceiptHash:"",
+//         getPreviousReceiptHash: "",
 //       );
-//       print("Concatenated Receipt String:$receiptString");
-//       logToFile(receiptString);
-//       receiptString.trim();
-//     }
-//     else{
+//     } else {
 //       receiptString = generateReceiptString(
 //         deviceID: deviceID,
 //         receiptType: "FISCALINVOICE",
@@ -3935,14 +3938,21 @@
 //         getPreviousReceiptHash: getLatestReceiptHash,
 //       );
 //     }
-//   print("Concatenated Receipt String:$receiptString");
-//   receiptString.trim();
-//     var bytes = utf8.encode(receiptString);
+
+//     print("Concatenated Receipt String: $receiptString");
+//     logToFile(receiptString);
+
+//     var bytes = utf8.encode(receiptString.trim());
 //     var digest = sha256.convert(bytes);
 //     final hash = base64.encode(digest.bytes);
+
 //     print(hash);
 //     logToFile(hash);
-//     return hash;
+//     // ✅ Return both
+//     return {
+//       "receiptString": receiptString,
+//       "hash": hash,
+//     };
 //   }
    
 //   //generate fiscal JSON
@@ -3950,13 +3960,13 @@
 //     String encodedreceiptDeviceSignature_signature;
 //   try {
 //     print("Entered generateFiscalJSON");
-
 //     // Ensure signing does not fail
 //     DateTime now = DateTime.now();
 //     String formattedDate = DateFormat("yyyy-MM-ddTHH:mm:ss").format(now);
+//     final hashData = await generateHash(formattedDate);
 //     try {
 //       print("Using raw string for signing");
-//       String data = await useRawString(formattedDate);
+//       String data = hashData['receiptString'].toString();
 //       final byteData = await rootBundle.load('assets/private_key.pem');
 //       final buffer = byteData.buffer;
 //       // Write to a temp file
@@ -4003,7 +4013,7 @@
 
 
 
-//     String hash = await generateHash(formattedDate);
+//     String hash = hashData['hash'].toString();
 //     print("Hash generated successfully");
 
 //     Map<String, dynamic> jsonData = {

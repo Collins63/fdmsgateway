@@ -681,6 +681,7 @@ Future<Database> initDB() async {
         "SELECT FiscalDayNo FROM OpenDay ORDER BY ID DESC LIMIT 1");
     return result.isNotEmpty ? result.first["FiscalDayNo"] : 0;
   }
+  
   Future<void> insertOpenDay(
       int fiscalDayNo, String status, String fiscalDayOpened) async {
     final db = await initDB();

@@ -55,10 +55,16 @@ dependencies:
   shared_preferences: ^2.5.3
   file_picker: ^10.2.0
   decimal: ^3.2.4
+  basic_utils: ^5.8.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+
+dependency_overrides:
+  pointycastle: ^4.0.0
+  http: ^0.13.6
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

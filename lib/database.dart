@@ -16,7 +16,7 @@ class DatabaseHelper {
    "create table openDay(ID INTEGER PRIMARY KEY AUTOINCREMENT , FiscalDayNo INTEGER , StatusOfFirstReceipt TEXT , FiscalDayOpened TEXT , FiscalDayClosed TEXT , TaxExempt INTEGER , TaxZero INTEGER , Tax15 INTEGER , TaxWT INTEGER )";
 
   String submittedReceipts=
-   "create table submittedReceipts(receiptGlobalNo INTEGER PRIMARY KEY AUTOINCREMENT , receiptCounter INTEGER ,  FiscalDayNo INTEGER , InvoiceNo INTEGER , receiptID INTEGER , receiptType TEXT , receiptCurrency TEXT , moneyType TEXT , receiptDate TEXT , receiptTime TEXT , receiptTotal REAL , taxCode TEXT , taxPercent TEXT , taxAmount REAL , SalesAmountwithTax REAL, receiptHash TEXT , receiptJsonbody TEXT , StatustoFDMS TEXT , qrurl TEXT , receiptServerSignature TEXT , submitReceiptServerresponseJSON TEXT, Total15VAT TEXT , TotalNonVAT REAL , TotalExempt REAL , TotalWT REAL  )";
+   "create table submittedReceipts(receiptGlobalNo INTEGER PRIMARY KEY AUTOINCREMENT , receiptCounter INTEGER ,  FiscalDayNo INTEGER , InvoiceNo TEXT , receiptID INTEGER , receiptType TEXT , receiptCurrency TEXT , moneyType TEXT , receiptDate TEXT , receiptTime TEXT , receiptTotal REAL , taxCode TEXT , taxPercent TEXT , taxAmount REAL , SalesAmountwithTax REAL, receiptHash TEXT , receiptJsonbody TEXT , StatustoFDMS TEXT , qrurl TEXT , receiptServerSignature TEXT , submitReceiptServerresponseJSON TEXT, Total15VAT TEXT , TotalNonVAT REAL , TotalExempt REAL , TotalWT REAL  )";
 
   String users = 
     "create table users(userId INTEGER PRIMARY KEY AUTOINCREMENT,realName TEXT , userName TEXT UNIQUE , userPassword TEXT , dateCreated TEXT , isAdmin INTEGER DEFAULT 0 ,isCashier INTEGER DEFAULT 0 , isActive INTEGER DEFAULT 1)";
@@ -808,24 +808,20 @@ Future<Database> initDB() async {
     ''',[fiscDay]);
   }
 
-  //get creditnote numbers
-
-  Future<String> getNextCreditNoteNumber() async{
+  Future<String> getNextCreditNoteNumber() async {
     final db = await initDB();
-    final result = await db.rawQuery('SELECT MAX(creditNoteNumber) as maxCr FROM credit_notes');
-    final maxCr = result.first['maxCr'] as String?;
+    final result = await db.rawQuery(
+      'SELECT MAX(CAST(SUBSTR(creditNoteNumber, 3) AS INTEGER)) as maxNum FROM credit_notes'
+    );
+    final maxNum = result.first['maxNum'] as int?; 
+    
     int nextNumber = 1;
 
-    if (maxCr != null) {
-      // Extract the numeric part by removing the 'cr' prefix
-      final numberPart = int.tryParse(maxCr.replaceFirst('cr', ''));
-      if (numberPart != null) {
-        nextNumber = numberPart + 1;
-      }
-    }
+    if (maxNum != null) {
 
-    // Format the new credit note number
-    return 'cr$nextNumber';
+      nextNumber = maxNum + 1; 
+    }
+    return 'cr$nextNumber'; 
   }
 
   //get call cancelled Receipts

@@ -15,7 +15,6 @@ import 'package:fdmsgateway/fiscalization/submitReceipts.dart';
 import 'package:fdmsgateway/fiscalization/submittedReceipts.dart';
 import 'package:fdmsgateway/forms/companyDetails.dart';
 import 'package:fdmsgateway/forms/fiscalReports.dart';
-import 'package:fdmsgateway/receiptVerification/receiptverification.dart';
 import 'package:fdmsgateway/signatureGeneration.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +42,7 @@ void main() {
   sqfliteFfiInit(); 
   databaseFactory = databaseFactoryFfi;
   WidgetsFlutterBinding.ensureInitialized();
-  //_startFolderWatcher();
+  _startFolderWatcher();
   runApp(const MyApp());
 }
 
@@ -162,7 +161,9 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isProcessing = false;
   final Directory inputFolder = Directory(r'C:\Fiscal\Input');
   final Directory signedFolder = Directory(r'C:\Fiscal\Signed');
+  final Directory originalFilesFolder = Directory(r'C:\Fiscal\OriginalFiles');
   final Directory unsignedFolder = Directory(r'C:\Fiscal\UnSigned');
+  final Directory doneFolder = Directory(r'C:\Fiscal\Done');
   DatabaseHelper dbHelper =  DatabaseHelper();
   StreamSubscription<WatchEvent>? inputSub;
   StreamSubscription<WatchEvent>? signedSub;
@@ -215,8 +216,8 @@ class _MyHomePageState extends State<MyHomePage> {
   int receiptsPendingSubmission =0;
   String? creditReason;
   String? creditedInvoice;
-  int isReceipt = 1;
-  int isInvoice = 0;
+  int isReceipt = 0;
+  int isInvoice = 1;
   String? currentInvoiceSubtotal;
   String? receipttotalVat;
   String? receiptinvoiceTotal;
@@ -484,6 +485,8 @@ Future<String> getConfig() async {
       icon: const Icon(Icons.message, color: Colors.white),
     );
   }
+
+
   Future<String> ping() async {
     String apiEndpointPing =
         "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/Ping";
@@ -542,7 +545,6 @@ Future<String> getConfig() async {
     SSLContextProvider sslContextProvider = SSLContextProvider();
     SecurityContext securityContext = await sslContextProvider.createSSLContext();
     // Retrieve unsubmitted receipts
-    //List<Map<String, dynamic>> receipts = await db.rawQuery(sql);
     List<Map<String, dynamic>> receipts = await dbHelper.getReceiptsNotSubmitted();
     print(receipts);
     for (var row in receipts) {
@@ -627,12 +629,9 @@ Future<String> getConfig() async {
     });
     return latestFiscDay;
   }
-
-  
   ///==================================END FDMS FUNCTIONS========================================
   ///
   ///
-  
   String formatString(String input) {
     final buffer = StringBuffer();
     for (int i = 0; i < input.length; i += 4) {
@@ -906,456 +905,6 @@ Future<String> getConfig() async {
       });
     }
 
-  
-  //=========================PRINT Failed Receipt=======================================================================  
-
-  Future<void> handleFailedReceiptPrint(
-    Map<String, dynamic> receiptData   
-  ) async {
-    print("Now printing on 80mm");
-    final storedPrinterName = await getSelectedPrinter();
-    try {
-    // Optional: fetch printers and pre-select one (to avoid dialog)
-    final printers = await Printing.listPrinters();
-    final selected = printers.firstWhere((p) => p.name.contains(storedPrinterName.toString())); // Your printer
-    final receiptDataData = receiptData['receipt'];
-    print(receiptDataData);
-      await printFailed80mmReceipt(
-        receipt: receiptDataData,
-        selectedPrinter: selected, // Uncomment for silent print
-      );
-    } catch (e) {
-      print("Print failed: $e");
-    }
-  }
-
-  Future<void> printFailed80mmReceipt({
-    required Map<String, dynamic> receipt,
-    Printer? selectedPrinter, // Optional silent print
-  }) async {
-    final pdf = pw.Document(); 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity),
-        build: (pw.Context context) {
-          return pw.Padding(
-            padding:  pw.EdgeInsets.symmetric(horizontal: 10),
-            child:
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "$tradeName",
-                style: pw.TextStyle(fontSize:10, fontWeight: pw.FontWeight.bold),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "TIN: $taxPayerTIN",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.SizedBox(height: 3),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "VAT No: $taxPayerVatNumber",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.SizedBox(height: 3),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "$taxPayerAddress",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.SizedBox(height: 3),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                  child: pw.Text(
-                  "$taxPayerEmail",
-                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ),
-              pw.SizedBox(height: 3),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.SizedBox(
-                child: pw.Text(
-                "$taxPayerPhone",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              ),
-              pw.Divider(),
-              isReceiptCreditNote == 1 ?
-                pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                  "FISCAL CREDIT NOTE",
-                  style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ): 
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                  "FISCAL TAX INVOICE",
-                  style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ),
-              pw.Divider(),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "Buyer",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.bold),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerTradeName'] ?? 'Walk-in Customer'}",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "TIN: ${receipt['buyerData']?['buyerTIN'] ?? 'N/A'}",
-                style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "VAT: ${receipt['buyerData']?['VATNumber'] ?? 'N/A'}",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              // pw.Container(
-              //   alignment: pw.Alignment.center,
-              //   child: pw.Text(
-              //   "${receipt['buyerData']?['buyerContacts']['email'] ?? 'N/A'}",
-              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              //   textAlign: pw.TextAlign.center,
-              // ),
-              // ),
-              // pw.Container(
-              //   alignment: pw.Alignment.center,
-              //   child: pw.Text(
-              //   "${receipt['buyerData']?['buyerContacts']['phoneNo'] ?? 'N/A'}",
-              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-              //   textAlign: pw.TextAlign.center,
-              // ),
-              // ),
-              pw.Divider(),
-              pw.Text("Date: ${receipt['receiptDate'] ?? ''}",style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)),
-              pw.Text("Currency: ${receipt['receiptCurrency'] ?? ''}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
-              isReceiptCreditNote == 1 ?
-              pw.Text("CreditNote No: ${receipt['invoiceNo'] ?? '#########'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-              pw.Text("Invoice No: ${receipt['invoiceNo'] ?? '#########'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
-              isReceiptCreditNote == 1 ? 
-                pw.Text("Credit Reason: ${receipt['receiptNotes'] ?? 'No reason provided'}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-                pw.SizedBox.shrink(),
-              pw.Divider(),
-              isReceiptCreditNote == 1 ?
-                pw.Container(
-                  alignment: pw.Alignment.center,
-                  child: pw.Text(
-                  "Credited Invoice",
-                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-                  textAlign: pw.TextAlign.center,
-                ),
-                ) :
-                pw.SizedBox.shrink(),
-              isReceiptCreditNote == 1 ?
-                pw.Text("Device Serial No: $serialNo", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-                pw.SizedBox.shrink(),
-              isReceiptCreditNote == 1 ?
-                pw.Text("Invoice No: ${receipt['creditDebitNote']['receiptGlobalNo']}", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-                pw.SizedBox.shrink(),
-              isReceiptCreditNote == 1 ?
-                pw.Text("Date: $dateForCreditNote", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-                pw.SizedBox.shrink(),
-              isReceiptCreditNote == 1 ?
-                pw.Text("Customer Reference No: CR-127" , style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)) :
-                pw.SizedBox.shrink(),
-              pw.Divider(),
-              pw.Text("Description", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              pw.Text("  Qty          UnitPrice          Vat              Total", style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 10)),
-              isReceiptCreditNote == 1 ? 
-              pw.Divider() : pw.SizedBox.shrink(),
-              ...List<pw.Widget>.from(
-                (receipt['receiptLines'] as List<dynamic>).map((item) {
-                  double productUnitPrice = double.tryParse(item['receiptLinePrice'].toString()) ?? 0.0;
-                  final double productVat;
-                  final double producttax;
-                  final double totalAmount = double.tryParse(item['receiptLineTotal'].toString()) ?? 0.0;
-                  if(item['taxCode'] == 'A' || item['taxCode'] == 'B'){
-                    productVat = 0.00;
-                  } else{
-                    productVat = productUnitPrice - (productUnitPrice/1.15);
-                    productUnitPrice = productUnitPrice/1.15;
-                  }
-                  // return pw.Text(
-                  //   "${item['receiptLineName']} \n     ${item['receiptLineQuantity']}                    ${productUnitPrice.toStringAsFixed(2)}                     ${productVat.toStringAsFixed(2)}                 ${item['receiptLineTotal']}",
-                  //   style: pw.TextStyle(fontSize: 8,),
-                  // );
-                return pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      "${item['receiptLineName']}",
-                      style: pw.TextStyle(fontSize: 8),
-                    ),
-                    pw.SizedBox(height: 2),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.start,
-                      children: [
-                        // Quantity (tight width)
-                        pw.SizedBox(
-                          width: 25,
-                          child: pw.Text(
-                            "${item['receiptLineQuantity']}",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.left,
-                          ),
-                        ),
-                        // Small space
-                        pw.SizedBox(width: 15),
-
-                        // Unit Price (fixed width)
-                        pw.SizedBox(
-                          width: 40,
-                          child: pw.Text(
-                            productUnitPrice.toStringAsFixed(2),
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                          ),
-                        ),
-
-                        pw.SizedBox(width: 20),
-
-                        // VAT (tight width)
-                        pw.SizedBox(
-                          width: 35,
-                          child: pw.Text(
-                            productVat.toStringAsFixed(2),
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                          ),
-                        ),
-
-                        pw.SizedBox(width: 15),
-
-                        // Total (takes remaining space)
-                        pw.SizedBox(
-                          width: 50,
-                          child: pw.Text(
-                            "${item['receiptLineTotal']}",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                            softWrap: false,
-                            overflow: pw.TextOverflow.clip,
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 4),
-                  ],
-                );
-
-                }),
-              ),
-              pw.Divider(),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.start,
-                children: [
-                  pw.Text("SUBTOTAL:",style: pw.TextStyle(fontSize: 8,)),
-                  pw.SizedBox(
-                          width: 154,
-                          child: pw.Text(
-                            "$currentInvoiceSubtotal",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                            softWrap: false,
-                            overflow: pw.TextOverflow.clip,
-                          ),
-                        ),
-                ]
-              ),
-              pw.SizedBox(height: 3),
-              //pw.Text("TOTAL VAT    $receipttotalVat", style: pw.TextStyle(fontSize: 8,)),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.start,
-                children: [
-                  pw.Text("TOTAL VAT:",style: pw.TextStyle(fontSize: 8,)),
-                  pw.SizedBox(
-                          width: 154,
-                          child: pw.Text(
-                            "$receipttotalVat",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                            softWrap: false,
-                            overflow: pw.TextOverflow.clip,
-                          ),
-                        ),
-                ]
-              ),
-              pw.SizedBox(height: 3),
-              //pw.Text("TOTAL                                                                      $receiptinvoiceTotal" , style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.start,
-                children: [
-                  pw.Text("TOTAL         :",style: pw.TextStyle(fontSize: 8,)),
-                  pw.SizedBox(
-                          width: 152,
-                          child: pw.Text(
-                            "$receiptinvoiceTotal",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                            softWrap: false,
-                            overflow: pw.TextOverflow.clip,
-                          ),
-                        ),
-                ]
-              ),
-              pw.Divider(),
-              //pw.Text("PAID                                                                        $paid", style: pw.TextStyle(fontSize: 8,)),
-
-              isReceiptCreditNote == 1 ? pw.SizedBox.shrink() :
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.start,
-                children: [
-                  pw.Text("PAID           :",style: pw.TextStyle(fontSize: 8,)),
-                  pw.SizedBox(
-                          width: 152,
-                          child: pw.Text(
-                            "$paid",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                            softWrap: false,
-                            overflow: pw.TextOverflow.clip,
-                          ),
-                        ),
-                ]
-              ),
-              //pw.Text("CHANGE                                                                   $change", style: pw.TextStyle(fontSize: 8,)),
-              isReceiptCreditNote == 1 ? pw.SizedBox.shrink() :
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.start,
-                children: [
-                  pw.Text("CHANGE     :",style: pw.TextStyle(fontSize: 8,)),
-                  pw.SizedBox(
-                          width: 152,
-                          child: pw.Text(
-                            "$change",
-                            style: pw.TextStyle(fontSize: 8),
-                            textAlign: pw.TextAlign.right,
-                            softWrap: false,
-                            overflow: pw.TextOverflow.clip,
-                          ),
-                        ),
-                ]
-              ),
-              pw.Divider(),
-              pw.SizedBox(height: 3),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "Receipt has validation errrors",
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.SizedBox(height: 3),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "DeviceID : $deviceID",
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "Fiscal Day No: $currentFiscal",
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "Invoice No: ${receipt['receiptGlobalNo']}",
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.SizedBox(height: 8),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "Powered by tigerweb.co.zw",
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Text("", textAlign: pw.TextAlign.center),
-            ],
-          ),
-        );
-      },
-    ),
-  );
-
-  // Print silently if printer is provided
-  if (selectedPrinter != null) {
-    await Printing.directPrintPdf(  
-      printer: selectedPrinter,
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  } else {
-    // Otherwise open the print dialog
-    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
-  }
-}
-
-
   //=========================PRINT 80mm Z REPORT=======================================================================  
 
   Future<void> print80mmZReport({
@@ -1372,7 +921,7 @@ Future<String> getConfig() async {
     final pdf = pw.Document();
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: const PdfPageFormat(80 * PdfPageFormat.mm, double.infinity), // Or set custom height
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, PdfPageFormat.a4.height), // Or set custom height
         maxPages: 100,
         build: (pw.Context context) => [
           pw.Column(
@@ -2233,6 +1782,7 @@ Future<String> getConfig() async {
   }
 
   //======================== PRINT 80MM RECEIPT======================================================================
+
   Future<void> print80mmReceipt({
     required Map<String, dynamic> receipt,
     required String qrUrl,
@@ -2240,6 +1790,7 @@ Future<String> getConfig() async {
     Printer? selectedPrinter, // Optional silent print
   }) async {
     final pdf = pw.Document();
+
     String formattedQrData = formatString(qrData);   
     pdf.addPage(
       pw.MultiPage(
@@ -2357,38 +1908,38 @@ Future<String> getConfig() async {
                 textAlign: pw.TextAlign.center,
               ),
               ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerContactS']['email'] ?? 'N/A'}",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
-              pw.Container(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                "${receipt['buyerData']?['buyerContactS']['phoneNo'] ?? 'N/A'}",
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
-                textAlign: pw.TextAlign.center,
-              ),
-              ),
+              // pw.Container(
+              //   alignment: pw.Alignment.center,
+              //   child: pw.Text(
+              //   "${receipt['buyerData']?['buyerAddress']['houseNo'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['street'] ?? 'N/A'} ",
+              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+              //   textAlign: pw.TextAlign.center,
+              // ),
+              // ),
+              // pw.Container(
+              //   alignment: pw.Alignment.center,
+              //   child: pw.Text(
+              //   "${receipt['buyerData']?['buyerAddress']['city'] ?? 'N/A'}, ${receipt['buyerData']?['buyerAddress']['province'] ?? 'N/A'} ",
+              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+              //   textAlign: pw.TextAlign.center,
+              // ),
+              // ),
+              // pw.Container(
+              //   alignment: pw.Alignment.center,
+              //   child: pw.Text(
+              //   "${receipt['buyerData']?['buyerContactS']['email'] ?? 'N/A'}",
+              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+              //   textAlign: pw.TextAlign.center,
+              // ),
+              // ),
+              // pw.Container(
+              //   alignment: pw.Alignment.center,
+              //   child: pw.Text(
+              //   "${receipt['buyerData']?['buyerContactS']['phoneNo'] ?? 'N/A'}",
+              //   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal),
+              //   textAlign: pw.TextAlign.center,
+              // ),
+              // ),
               pw.Divider(),
               pw.Text("Date: ${receipt['receiptDate'] ?? ''}",style: pw.TextStyle(fontSize:9, fontWeight: pw.FontWeight.normal)),
               pw.Text("Currency: ${receipt['receiptCurrency'] ?? ''}",style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal)),
@@ -2509,6 +2060,22 @@ Future<String> getConfig() async {
                 }),
               ),
               pw.Divider(),
+              // pw.Row(
+              //   mainAxisAlignment: pw.MainAxisAlignment.start,
+              //   children: [
+              //     pw.Text("SUBTOTAL:",style: pw.TextStyle(fontSize: 8,)),
+              //     pw.SizedBox(
+              //             width: 154,
+              //             child: pw.Text(
+              //               "$currentInvoiceSubtotal",
+              //               style: pw.TextStyle(fontSize: 8),
+              //               textAlign: pw.TextAlign.right,
+              //               softWrap: false,
+              //               overflow: pw.TextOverflow.clip,
+              //             ),
+              //           ),
+              //   ]
+              // ),
               pw.SizedBox(height: 3),
               //pw.Text("TOTAL VAT                                                                $receipttotalVat", style: pw.TextStyle(fontSize: 8,)),
               pw.Row(
@@ -2516,15 +2083,15 @@ Future<String> getConfig() async {
                 children: [
                   pw.Text("TOTAL VAT:",style: pw.TextStyle(fontSize: 8,)),
                   pw.SizedBox(
-                    width: 154,
-                    child: pw.Text(
-                      "$receipttotalVat",
-                      style: const pw.TextStyle(fontSize: 8),
-                      textAlign: pw.TextAlign.right,
-                      softWrap: false,
-                      overflow: pw.TextOverflow.clip,
-                    ),
-                  ),
+                          width: 154,
+                          child: pw.Text(
+                            "$receipttotalVat",
+                            style: pw.TextStyle(fontSize: 8),
+                            textAlign: pw.TextAlign.right,
+                            softWrap: false,
+                            overflow: pw.TextOverflow.clip,
+                          ),
+                        ),
                 ]
               ),
               pw.SizedBox(height: 3),
@@ -2662,14 +2229,6 @@ Future<String> getConfig() async {
     // Otherwise open the print dialog
     await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
   }
-
-  final bytes = await pdf.save();
-  final directory = Directory(r'C:\Fiscal\Done');
-    if (!await directory.exists()) {
-    await directory.create(recursive: true);
-  }
-  final file = File('${directory.path}\\${receipt['receiptGlobalNo']}.pdf'); // Change filename as needed
-  await file.writeAsBytes(bytes);
 }
 
   ///======================================Print 58mm Receipt================================================
@@ -3156,7 +2715,7 @@ Future<String> getConfig() async {
                   'customerEmail': customerDetails['email'] != "null"
                       ? customerDetails['email']
                       : 'noemail@email.com',
-                  'houseNO': buyerAddress['houseNo'],
+                  'houseNo': buyerAddress['houseNo'],
                   'street': buyerAddress['street'],
                   'province': buyerAddress['province'],
                   'city': buyerAddress['city']
@@ -3168,15 +2727,12 @@ Future<String> getConfig() async {
             await addReceiptItem(tableData);
             print("done with adding items");
             await generateFiscalJSON();
-            bool success = await submitReceipt();
-            if(success == true) {
-              final destPath = path.join(signedFolder.path, path.basename(file.path));
-              await file.rename(destPath);
-              print("📁 Moved to Signed: ${path.basename(destPath)}");
-            }else{
-              final destPath = path.join(unsignedFolder.path , path.basename(file.path));
-              await file.rename(destPath);
-            }
+            await submitReceipt();
+
+            final destPath = path.join(signedFolder.path, path.basename(file.path));
+            await file.rename(destPath);
+            print("📁 Moved to Signed: ${path.basename(destPath)}");
+
           } else if (documentType == 'credit_note') {
             isReceiptCreditNote = 1;
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
@@ -3207,72 +2763,52 @@ Future<String> getConfig() async {
         } else {
           // Invoice branch
           if (documentType == 'invoice') {
-            // final List<dynamic> tableData = responseData['line_items'];
-            // final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
 
-            // setState(() {
-            //   invoiceDetails = invoiceDetailsInner;
-            //   transactionCurrency = invoiceDetailsInner['currency'];
-            //   currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
-
-            //   if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-            //     selectedCustomer.clear();
-            //   } else {
-            //     selectedCustomer.add({
-            //       'customerName': invoiceDetailsInner['customer_name'],
-            //       'customerVAT': invoiceDetailsInner['buyer_vat'],
-            //       'customerTIN': invoiceDetailsInner['buyer_tin'],
-            //       'customerPhone': invoiceDetailsInner['phone'],
-            //       'customerEmail': invoiceDetailsInner['email'],
-            //     });
-            //   }
-            // });
-
-            // print("adding items");
-            // await addItem(tableData);
-            // print("done with adding items");
-            // await generateFiscalJSON();
-            // await submitReceipt();
-
-            // final destPath = path.join(signedFolder.path, path.basename(file.path));
-            // await file.rename(destPath);
-            // print("📁 Moved to Signed: ${path.basename(destPath)}");
             final List<dynamic> tableData = responseData['line_items'];
-            final Map<String, dynamic> invoiceDetailsInner = responseData['totals'];
+            final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
+            final Map<String, dynamic> customerDetails = responseData['customer_details'];
 
             setState(() {
               invoiceDetails = invoiceDetailsInner;
-              transactionCurrency = responseData['currency'];
-              currentInvoiceNumber = responseData['invoice_number'];
+              transactionCurrency = invoiceDetailsInner['currency'];
+              currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
 
-              // if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-              //   selectedCustomer.clear();
-              // } else {
-              //   selectedCustomer.add({
-              //     'customerName': invoiceDetailsInner['customer_name'],
-              //     'customerVAT': invoiceDetailsInner['buyer_vat'],
-              //     'customerTIN': invoiceDetailsInner['buyer_tin'],
-              //     'customerPhone': invoiceDetailsInner['phone'],
-              //     'customerEmail': invoiceDetailsInner['email'],
-              //   });
-              // }
+              if (customerDetails['name'] == 'Cash' || customerDetails['name'] == '') {
+                selectedCustomer.clear();
+              } else {
+                final buyerAddress = customerDetails['buyerAddress'];
+                selectedCustomer.add({
+                  'customerName': customerDetails['name'] ?? "Cash Sale" , 
+                  'customerVAT': customerDetails['vat_number'] ?? "000000000",
+                  'customerTIN': customerDetails['tin'] ?? "0000000000",
+                  'customerPhone': customerDetails['phone'] ?? "0000000000",
+                  'customerEmail': customerDetails['email']  ?? "noemail@gmail.com",
+                  'houseN0': buyerAddress['houseNo'] ?? "0",
+                  'street': buyerAddress['street'] ?? "Zimbabwe",
+                  'province': buyerAddress['province'] ?? "Zimbabwe",
+                  'city': buyerAddress['city'] ?? "Zimbabwe"
+                });
+              }
             });
-            print("adding items");
             await addItem(tableData);
             print("done with adding items");
-            await generateFiscalJSON();
-            await submitReceipt();
-
-            final destPath = path.join(signedFolder.path, path.basename(file.path));
-            await file.rename(destPath);
-            print("📁 Moved to Signed: ${path.basename(destPath)}");
-            await stampInvoice(
-              File(destPath),
-              "$stampDayNo",                         // replace with your dynamic day number
-              "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-              "$stampQRData",
-              "$stampVerificationCode"          // replace with the actual QR data
-            );
+            //await generateFiscalJSON();
+            //bool success = await submitReceipt();
+            // if(success == true){
+            //   final destPath = path.join(originalFilesFolder.path, path.basename(file.path));
+            //   await file.rename(destPath);
+            //   print("📁 Moved to Original Files: ${path.basename(destPath)}");
+            //   await stampInvoice(
+            //     File(destPath),
+            //       "$stampDayNo",                         // replace with your dynamic day number
+            //       "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+            //       "$stampQRData",
+            //       "$stampVerificationCode"          // replace with the actual QR data
+            //   );
+            // }else{
+            //   final destPath = path.join(unsignedFolder.path , path.basename(file.path));
+            //   await file.rename(destPath);
+            // }
           } else if (documentType == 'credit_note') {
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];
@@ -3290,6 +2826,13 @@ Future<String> getConfig() async {
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
+            await stampInvoice(
+              File(destPath),
+              "$stampDayNo",                         // replace with your dynamic day number
+              "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+              "$stampQRData",
+              "$stampVerificationCode"          // replace with the actual QR data
+            );
           }
         }
       } else {
@@ -3628,8 +3171,8 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl,invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
-           // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
+            //handleReceiptPrint(jsonData, qrurl, creditQrData);
+            // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             taxAmount = 0.0;
             currentReceiptGlobalNo = "";
@@ -3684,7 +3227,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            //handleReceiptPrint(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 
@@ -3741,7 +3284,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            //handleReceiptPrint(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             taxAmount = 0.0;
@@ -3799,7 +3342,7 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            //handleReceiptPrint(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             taxAmount = 0.0;
@@ -3889,58 +3432,71 @@ Future<void> generateCreditFiscalJSON() async{
   }
 
   //add to receipt items
-Future<void> addItem(List<dynamic> tableData) async {
+  Future<void> addItem(List<dynamic> tableData) async {
+  
   final List<Map<String, dynamic>> lineItems = tableData.cast<Map<String, dynamic>>();
   final newItems = <Map<String, dynamic>>[];
-
+  
   for (var item in lineItems) {
     // Validate required fields
-    if (item['description'] == null || item['unit_price'] == null) {
+    if (item['Description'] == null || item['Unit Price'] == null) {
       continue;
     }
-    double unitPrice = (item['unit_price'] is String)
-      ? double.tryParse(item['unit_price'].replaceAll(',', '')) ?? 0
-      : (item['unit_price'] ?? 0).toDouble();
-    // int quantity = (item['Qty'] is String)
-    //     ? int.tryParse(item['Qty']) ?? 1
-    //     : (item['Qty'] ?? 1);
-    double totalPrice = double.tryParse(item['unit_price'].toString().replaceAll(',', '')) ?? 0;
-    //double itemTotal = totalPrice / quantity;
+    double unitPrice = (item['Unit Price'] is String)
+      ? double.tryParse(item['Unit Price'].replaceAll(',', '')) ?? 0
+      : (item['Unit Price'] ?? 0).toDouble();
+
+    int quantity = (item['Qty'] is String)
+        ? int.tryParse(item['Qty']) ?? 1
+        : (item['Qty'] ?? 1);
+
+    
+    //double totalPrice = double.tryParse(item['unit_price'].toString().replaceAll(',', '')) ?? 0;
     double itemTax;
     int taxID;
     String taxCode;
     String taxPercent;
-
-    final vatValue = item['vat_15'];
-    if (vatValue != null && vatValue != '-' && double.tryParse(vatValue) != null && double.parse(vatValue) > 0.0) {
+    double lineItemTax = 0;
+    double itemTotal = 0 ;
+    double totalPrice =  0 ;
+    final vatValue = item['VAT'];
+    
+    if ((vatValue) != null && vatValue != "-" && double.parse(vatValue.toString()) > 0.0 ) {
+      lineItemTax = unitPrice - (unitPrice / 0.15) ;
+      itemTotal = unitPrice ;
+      totalPrice = roundTo2(itemTotal * quantity);
       taxID = 1;
       taxPercent = "15.00";
       taxCode = "A";
-      itemTax = double.tryParse(vatValue)!;
-      salesAmountwithTax += totalPrice + itemTax;
+      itemTax = roundTo2(lineItemTax * quantity);
+      salesAmountwithTax += totalPrice;
     } else if (vatValue == '-') {
+      itemTotal = unitPrice;
+      totalPrice = itemTotal * quantity;
       taxID = 3;
       taxPercent = "0";
       taxCode = "C";
       itemTax = 0;
     } else {
-      taxID = 2;
+      itemTotal = unitPrice;
+      totalPrice = itemTotal * quantity;
+      taxID =2;
       taxPercent = "0.00";
       taxCode = "B";
-      itemTax = totalPrice * double.parse(taxPercent);
+      itemTax = 0;
     }
 
     newItems.add({
-      'productName': item['description'] ?? 'Unknown',
-      'unitPrice': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
-      'price': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
-      'quantity': 1,
-      'total': double.tryParse((totalPrice + itemTax).toStringAsFixed(2)),
+      'productName': item['Description'] ?? 'Unknown',
+      'unitPrice': unitPrice,
+      'price': itemTotal,
+      'quantity': quantity,
+      'total': totalPrice,
       'taxID': taxID,
       'taxPercent': taxPercent,
       'taxCode': taxCode,
     });
-    totalAmount += totalPrice + itemTax;
+    totalAmount += totalPrice;
     taxAmount += itemTax;
   }
 
@@ -3951,7 +3507,6 @@ Future<void> addItem(List<dynamic> tableData) async {
 
   print("receiptItems: $receiptItems");
 }
-
 
 double roundTo2(double value) {
   final Decimal decimalValue = Decimal.parse(value.toString());
@@ -4039,7 +3594,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
   print("receiptItems: $receiptItems");
 }
 
-
   String generateTaxSummary(List<dynamic> receiptItems) {
     Map<int, Map<String, dynamic>> taxGroups = {};
     
@@ -4103,7 +3657,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
       return "$taxCode$taxPercent$taxAmount$salesAmount";
     }).join("");
   }
-
 
   String generateReceiptString({
     required int deviceID,
@@ -4170,7 +3723,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     }  
   }
 
-
   List<Map<String, dynamic>> generateReceiptTaxes(List<dynamic> receiptItems) {
     Map<int, Map<String, dynamic>> taxGroups = {}; // Store tax summaries
 
@@ -4224,7 +3776,6 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     }).toList();
   }
 
-  //generate hash
   Future<Map<String, String>> generateHash(String date) async {
     String saleCurrency = transactionCurrency.toString();
     int latestFiscDay = await dbHelper.getlatestFiscalDay();
@@ -4289,19 +3840,20 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
     };
   }
 
+   
   //generate fiscal JSON
   Future<String> generateFiscalJSON() async {
     String encodedreceiptDeviceSignature_signature;
   try {
     print("Entered generateFiscalJSON");
-
     // Ensure signing does not fail
     DateTime now = DateTime.now();
     String formattedDate = DateFormat("yyyy-MM-ddTHH:mm:ss").format(now);
-
     final hashData = await generateHash(formattedDate);
+
     try {
       print("Using raw string for signing");
+      //String data = await useRawString(formattedDate);
       String data = hashData['receiptString'].toString();
       final byteData = await rootBundle.load('assets/private_key.pem');
       final buffer = byteData.buffer;
@@ -4345,6 +3897,7 @@ Future<void> addReceiptItem(List<dynamic> tableData) async {
       return "{}";
     }
 
+    //String hash = await generateHash(formattedDate);
     String hash = hashData['hash'].toString();
     print("Hash generated successfully");
 
@@ -4972,9 +4525,6 @@ Future<bool> submitReceipt() async {
       String receiptQrData = first16Chars.toString();
       String qrurl = genericzimraqrurl + formattedDeviceID + formattedDateStr + formatedReceiptGlobalNo + receiptQrData;
 
-      String getLatestReceiptHash = await dbHelper.getLatestReceiptHash();
-      String publicKeyPem = await rootBundle.loadString('assets/public_key.pem');
-
       setState(() {
         currentUrl = qrurl;
         currentDayNo = fiscalDayNo.toString();
@@ -4985,8 +4535,8 @@ Future<bool> submitReceipt() async {
         stampVerificationCode = receiptQrData; 
       });
       print("QR URL: $qrurl");
-      String firstReceiptHash = "";
-      if(pingResponse=="200"){
+      
+    if(pingResponse=="200"){
       try {
         String apiEndpointSubmitReceipt =
         "https://fdmsapi.zimra.co.zw/Device/v1/$deviceID/SubmitReceipt";
@@ -5018,69 +4568,70 @@ Future<bool> submitReceipt() async {
         String submitReceiptServerresponseJson = responseBody.toString();
         print("your server server response is $submitReceiptServerresponseJson");
         if (statusCode == 200) {
-          print("Code is 200, saving receipt...");
+        print("Code is 200, saving receipt...");
 
-          // Check if 'receiptPayments' is non-empty before accessing index 0
-          try {
-            final Database dbinit = await dbHelper.initDB();
-            await dbinit.insert('submittedReceipts',
-              {
-                'receiptCounter': jsonData['receipt']?['receiptCounter'] ?? 0,
-                'FiscalDayNo' : fiscalDayNo,
-                'InvoiceNo': currentInvoiceNumber.toString(),
-                'receiptID': responseBody['receiptID'] ?? 0,
-                'receiptType': jsonData['receipt']['receiptType']?.toString() ?? "",
-                'receiptCurrency': jsonData['receipt']?['receiptCurrency']?.toString() ?? "",
-                'moneyType': moneyType,
-                'receiptDate': jsonData['receipt']?['receiptDate']?.toString() ?? "",
-                'receiptTime': jsonData['receipt']?['receiptDate']?.toString() ?? "",
-                'receiptTotal': receiptTotal,
-                'taxCode': "C",
-                'taxPercent': "15.00",
-                'taxAmount': taxAmount ?? 0,
-                'SalesAmountwithTax': salesAmountwithTax ?? 0,
-                'receiptHash': jsonData['receipt']?['receiptDeviceSignature']?['hash']?.toString() ?? "",
-                'receiptJsonbody': receiptJsonbody?.toString() ?? "",
-                'StatustoFDMS': "Submitted".toString(),
-                'qrurl': qrurl,
-                'receiptServerSignature': responseBody['receiptServerSignature']?['signature'].toString() ?? "",
-                'submitReceiptServerresponseJSON': "$submitReceiptServerresponseJson" ?? "noresponse",
-                'Total15VAT': total15VAT.toString(),
-                'TotalNonVAT': totalNonVAT,
-                'TotalExempt': totalExempt,
-                'TotalWT': 0.0,
-              },
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-            //print("Data inserted successfully!");
-            handleReceiptPrint(jsonData, qrurl, receiptQrData);
-            //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-            //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
-            receiptItems.clear();
-            totalAmount = 0.0;
-            taxAmount = 0.0;
-            currentReceiptGlobalNo = "";
-            currentUrl = "";
-            currentDayNo = "";
-            selectedCustomer.clear();
-            isReceiptCreditNote =0;
-            fetchDayReceiptCounter();
-            fetchReceiptsPending();
-            fetchReceiptsSubmitted();
-          } catch (e) {
-            Get.snackbar(" Db Error",
-              "$e",
-              snackPosition: SnackPosition.TOP,
-              colorText: Colors.white,
-              backgroundColor: Colors.red,
-              icon: const Icon(Icons.error),
-            );
-          }
-          return true;
-        }
-        else{
-          return false;
-        }
+        // Check if 'receiptPayments' is non-empty before accessing index 0
+        
+        try {
+          final Database dbinit = await dbHelper.initDB();
+          await dbinit.insert('submittedReceipts',
+            {
+              'receiptCounter': jsonData['receipt']?['receiptCounter'] ?? 0,
+              'FiscalDayNo' : fiscalDayNo,
+              'InvoiceNo': int.tryParse(jsonData['receipt']?['invoiceNo']?.toString() ?? "0") ?? 0,
+              'receiptID': responseBody['receiptID'] ?? 0,
+              'receiptType': jsonData['receipt']['receiptType']?.toString() ?? "",
+              'receiptCurrency': jsonData['receipt']?['receiptCurrency']?.toString() ?? "",
+              'moneyType': moneyType,
+              'receiptDate': jsonData['receipt']?['receiptDate']?.toString() ?? "",
+              'receiptTime': jsonData['receipt']?['receiptDate']?.toString() ?? "",
+              'receiptTotal': receiptTotal,
+              'taxCode': "C",
+              'taxPercent': "15.00",
+              'taxAmount': taxAmount ?? 0,
+              'SalesAmountwithTax': salesAmountwithTax ?? 0,
+              'receiptHash': jsonData['receipt']?['receiptDeviceSignature']?['hash']?.toString() ?? "",
+              'receiptJsonbody': receiptJsonbody?.toString() ?? "",
+              'StatustoFDMS': "Submitted".toString(),
+              'qrurl': qrurl,
+              'receiptServerSignature': responseBody['receiptServerSignature']?['signature'].toString() ?? "",
+              'submitReceiptServerresponseJSON': "$submitReceiptServerresponseJson" ?? "noresponse",
+              'Total15VAT': total15VAT.toString(),
+              'TotalNonVAT': totalNonVAT,
+              'TotalExempt': totalExempt,
+              'TotalWT': 0.0,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+          //print("Data inserted successfully!");
+          //handleReceiptPrint(jsonData, qrurl, receiptQrData);
+          //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
+          //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
+          receiptItems.clear();
+          totalAmount = 0.0;
+          taxAmount = 0.0;
+          currentReceiptGlobalNo = "";
+          currentUrl = "";
+          currentDayNo = "";
+          selectedCustomer.clear();
+          isReceiptCreditNote =0;
+          fetchDayReceiptCounter();
+          fetchReceiptsPending();
+          fetchReceiptsSubmitted();
+        } catch (e) {
+          Get.snackbar(" Db Error",
+            "$e",
+            snackPosition: SnackPosition.TOP,
+            colorText: Colors.white,
+            backgroundColor: Colors.red,
+            icon: const Icon(Icons.error),
+          );
+      }
+      return true;
+    }
+    else{
+      return false;
+    }
       } catch (e) {
         return false;
       }
@@ -5093,7 +4644,7 @@ Future<bool> submitReceipt() async {
           {
             'receiptCounter': jsonData['receipt']?['receiptCounter'] ?? 0,
             'FiscalDayNo' : fiscalDayNo,
-            'InvoiceNo': currentInvoiceNumber.toString(),
+            'InvoiceNo': int.tryParse(jsonData['receipt']?['invoiceNo']?.toString() ?? "0") ?? 0,
             'receiptID': 0,
             'receiptType': jsonData['receipt']['receiptType']?.toString() ?? "",
             'receiptCurrency': jsonData['receipt']?['receiptCurrency']?.toString() ?? "",
@@ -5119,8 +4670,10 @@ Future<bool> submitReceipt() async {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
         print("Data inserted successfully!");
+        totalAmount = 0.0;
+        taxAmount = 0.0;
         //generateInvoiceFromJson(jsonData, qrurl, receiptQrData);
-        handleReceiptPrint(jsonData, qrurl,receiptQrData);
+        //handleReceiptPrint(jsonData, qrurl,receiptQrData);
         //handleReceiptPrint58mm(jsonData, qrurl, receiptQrData);
         totalAmount = 0.0;
         taxAmount = 0.0;
@@ -5129,7 +4682,7 @@ Future<bool> submitReceipt() async {
         currentDayNo = "";
         selectedCustomer.clear();
         isReceiptCreditNote =0;
-        //print58mmAdvanced(jsonData, qrurl);
+         //print58mmAdvanced(jsonData, qrurl);
         receiptItems.clear();
         isReceiptCreditNote =0;
         fetchDayReceiptCounter();
@@ -5143,8 +4696,8 @@ Future<bool> submitReceipt() async {
           backgroundColor: Colors.red,
           icon: const Icon(Icons.error),
         );
-    }
-    return true;
+      }
+      return true;
     }
   }
 
@@ -5234,6 +4787,8 @@ Future<bool> submitReceipt() async {
   }
 }
 
+
+
   void restoreBackup() async {
     final databasePath = await databaseFactoryFfi.getDatabasesPath();
     final fullPath = path.join(databasePath, databaseName1);
@@ -5320,6 +4875,11 @@ Future<bool> submitReceipt() async {
                           Text("RECEIPTS SUBMITTED:${receiptsSubmitted.length} " , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
                           SizedBox(height: 10,),
                           Text("RECEIPTS PENDING: ${receiptsPending.length}" , style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                          // ElevatedButton(
+                          //   child: Text('Test Printing'),
+                          //   onPressed: () async {
+                          //     final printers = await Printing.listPrinters();
+                          //     print("Available printers: $printers");})
                         ],
                       ),
                     ),
@@ -5850,7 +5410,6 @@ Future<(
     final isCredit = receiptType != 'FISCALINVOICE';
 
     for (final t in r['receiptTaxes'] as List<dynamic>) {
-
       final rawTaxAmt = t['taxAmount'];
       final rawSales = t['salesAmountWithTax'];
       final taxAmt = rawTaxAmt is num ? rawTaxAmt.toDouble() : double.tryParse(rawTaxAmt.toString()) ?? 0;
@@ -6120,4 +5679,8 @@ class DatabaseBackupService{
 }
 
 
-//code above is for constraint depot
+
+
+
+
+

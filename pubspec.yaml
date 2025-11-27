@@ -90,6 +90,7 @@ flutter:
     - assets/private_key.pem
     - assets/certificate.pem
     - assets/tigerwebLogo.PNG
+    - assets/public_key.pem
     
   #   - images/a_dot_ham.jpeg
 

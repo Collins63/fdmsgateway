@@ -2791,24 +2791,24 @@ Future<String> getConfig() async {
             });
             print("adding items");
             await addItem(tableData);
-            // print("done with adding items");
-            // await generateFiscalJSON();
-            // bool success = await submitReceipt();
-            // if(success == true){
-            //   final destPath = path.join(originalFilesFolder.path, path.basename(file.path));
-            //   await file.rename(destPath);
-            //   print("📁 Moved to Original Files: ${path.basename(destPath)}");
-            //   await stampInvoice(
-            //     File(destPath),
-            //       "$stampDayNo",                         // replace with your dynamic day number
-            //       "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
-            //       "$stampQRData",
-            //       "$stampVerificationCode"          // replace with the actual QR data
-            //   );
-            // }else{
-            //   final destPath = path.join(unsignedFolder.path , path.basename(file.path));
-            //   await file.rename(destPath);
-            // }
+            print("done with adding items");
+            await generateFiscalJSON();
+            bool success = await submitReceipt();
+            if(success == true){
+              final destPath = path.join(originalFilesFolder.path, path.basename(file.path));
+              await file.rename(destPath);
+              print("📁 Moved to Original Files: ${path.basename(destPath)}");
+              await stampInvoice(
+                File(destPath),
+                  "$stampDayNo",                         // replace with your dynamic day number
+                  "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+                  "$stampQRData",
+                  "$stampVerificationCode"          // replace with the actual QR data
+              );
+            }else{
+              final destPath = path.join(unsignedFolder.path , path.basename(file.path));
+              await file.rename(destPath);
+            }
           } else if (documentType == 'credit_note') {
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];

@@ -29,12 +29,33 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
   List<int> selectedReceipt = [];
   final saveCompanyDetailsKey = GlobalKey<FormState>();
   DatabaseHelper dbHelper = DatabaseHelper();
+  bool isReceipt = false;
+  bool isInvoice = false;
   
   @override
   void initState() {
     super.initState();
     fetchTaxPayerDetails();
     showSelectedPrinter();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isReceipt = prefs.getBool('isReceipt') ?? false; // default = false
+      isInvoice = prefs.getBool('isInvoice') ?? false;
+    });
+  }
+
+  Future<void> _saveInvoiceSetting(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isInvoice', value);
+  }
+
+  Future<void> _saveReceiptSetting(bool value) async{
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isReceipt', value);
   }
 
   //get submitted receipts
@@ -879,6 +900,9 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
   Future<void> saveSelectedPrinter(String printerName) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('preferred_printer', printerName);
+    setState(() {
+      selectedPrinter  = printerName;
+    });
   }
 
   Future<String?> getSelectedPrinter() async {
@@ -889,7 +913,11 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
   Future<void> clearSelectedPrinter() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('preferred_printer');
+    setState(() {
+      selectedPrinter = "No printer selected";
+    });
   }
+
   String? selectedPrinter;
   Future<void> showSelectedPrinter() async{
     final selectedPrinter1 = await getSelectedPrinter();
@@ -918,6 +946,12 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
                 onTap: () async {
                   await saveSelectedPrinter(printer.name);
                   Navigator.of(context).pop();
+                  Get.snackbar("Printer Settings",
+                  "${printer.name} saved as the default printer",
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                  icon: const Icon(Icons.message , color: Colors.white,)
+                  );
                 },
               );
             },
@@ -935,312 +969,365 @@ class _CompanydetailsPageState extends State<CompanydetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.topLeft,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_circle_left_outlined, size: 40,),
-              onPressed: () {
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> MyHomePage()));
-              },
-            ),
-          ),
-          const Text('Company Details Page'),
-          const SizedBox(height: 20,),
-          Container(
-              width: 1200,
-              height: 150,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 10,
-                    spreadRadius: 4,
-                    offset: Offset(0, 6),
-                    color: Colors.black.withOpacity(0.3),
-                  )
-                ]
+      body: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Align(
+              alignment: Alignment.topLeft,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_circle_left_outlined, size: 40,),
+                onPressed: () {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> MyHomePage()));
+                },
               ),
-              child: isLoading
-              ? const Center(child: CircularProgressIndicator(),)
-              : Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Expanded(
-                                    child: Scrollbar(
-                                      thumbVisibility: true,
-                                      controller: _verticalScroll,
-                                      child: SingleChildScrollView(
-                                        controller: _verticalScroll,
-                                        scrollDirection: Axis.vertical,
-                                        child: Scrollbar(
-                                          thumbVisibility: true,
-                                          controller: _horizontalScroll,
-                                          notificationPredicate: (notif) => notif.depth == 1,
-                                          child: SingleChildScrollView(
-                                            controller: _horizontalScroll,
-                                            scrollDirection: Axis.horizontal,
-                                            child: ConstrainedBox(
-                                              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
-                                              child: ConstrainedBox(
-                                                constraints: const BoxConstraints(
-                                                  minWidth: 900, // Force overflow
-                                                ),
-                                                child: DataTable(
-                                                  headingTextStyle: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  headingRowColor: MaterialStateProperty.all(Colors.blue),
-                                                  columns: const [
-                                                    DataColumn(label: Text('TradeName')),
-                                                    DataColumn(label: Text('TIN Number')),
-                                                    DataColumn(label: Text('VAT Number')),
-                                                    DataColumn(label: Text('Address')),
-                                                    DataColumn(label: Text('Email')),
-                                                    DataColumn(label: Text('Phone Number')),
-                                                    DataColumn(label: Text('Website')),
-                                                    DataColumn(label: Text('Device Id')),
-                                                    DataColumn(label: Text('Activation Key')),
-                                                    DataColumn(label: Text('Device Model Name')),
-                                                    DataColumn(label: Text('Model Version')),
-                                                    DataColumn(label:Text("Actions"))
-                                                  ],
-                                                  rows: taxPayerDetails.map((sales) {
-                                                    return DataRow(
-                                                      selected: selectedReceipt.contains(sales['taxPayerId']),
-                                                      onSelectChanged: (selected) {
-                                                        toggleSelection(sales['taxPayerId']);
+            ),
+            const Text('Company Details Page'),
+            const SizedBox(height: 20,),
+            Container(
+                width: 1200,
+                height: 150,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 10,
+                      spreadRadius: 4,
+                      offset: Offset(0, 6),
+                      color: Colors.black.withOpacity(0.3),
+                    )
+                  ]
+                ),
+                child: isLoading
+                ? const Center(child: CircularProgressIndicator(),)
+                : Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            controller: _verticalScroll,
+                            child: SingleChildScrollView(
+                              controller: _verticalScroll,
+                              scrollDirection: Axis.vertical,
+                              child: Scrollbar(
+                                thumbVisibility: true,
+                                controller: _horizontalScroll,
+                                notificationPredicate: (notif) => notif.depth == 1,
+                                child: SingleChildScrollView(
+                                  controller: _horizontalScroll,
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 900, // Force overflow
+                                      ),
+                                      child: DataTable(
+                                        headingTextStyle: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        headingRowColor: MaterialStateProperty.all(Colors.blue),
+                                        columns: const [
+                                          DataColumn(label: Text('TradeName')),
+                                          DataColumn(label: Text('TIN Number')),
+                                          DataColumn(label: Text('VAT Number')),
+                                          DataColumn(label: Text('Address')),
+                                          DataColumn(label: Text('Email')),
+                                          DataColumn(label: Text('Phone Number')),
+                                          DataColumn(label: Text('Website')),
+                                          DataColumn(label: Text('Device Id')),
+                                          DataColumn(label: Text('Activation Key')),
+                                          DataColumn(label: Text('Device Model Name')),
+                                          DataColumn(label: Text('Model Version')),
+                                          DataColumn(label:Text("Actions"))
+                                        ],
+                                        rows: taxPayerDetails.map((sales) {
+                                          return DataRow(
+                                            selected: selectedReceipt.contains(sales['taxPayerId']),
+                                            onSelectChanged: (selected) {
+                                              toggleSelection(sales['taxPayerId']);
+                                            },
+                                            cells: [
+                                              DataCell(Text(sales['taxPayerName'].toString())),
+                                              DataCell(Text(sales['taxPayerTin'].toString())),
+                                              DataCell(Text(sales['taxPayerVatNumber'].toString())),
+                                              DataCell(Text(sales['taxPayerAddress'].toString())),
+                                              DataCell(Text(sales['taxPayerEmail'].toString())),
+                                              DataCell(Text(sales['taxPayerPhone'].toString())),
+                                              DataCell(Text(sales['taxPayerWebsite'].toString())),
+                                              DataCell(Text(sales['deviceID'].toString())),
+                                              DataCell(Text(sales['activationKey'].toString())),
+                                              DataCell(Text(sales['deviceModelName'].toString())),
+                                              DataCell(Text(sales['deviceModelVersion'].toString())),
+                                              DataCell(
+                                                Row(
+                                                  children: [
+                                                    IconButton(
+                                                      icon: const Icon(Icons.edit, color: Colors.blue),
+                                                      onPressed: () {
+                                                        showUpdatePrompt();
                                                       },
-                                                      cells: [
-                                                        DataCell(Text(sales['taxPayerName'].toString())),
-                                                        DataCell(Text(sales['taxPayerTin'].toString())),
-                                                        DataCell(Text(sales['taxPayerVatNumber'].toString())),
-                                                        DataCell(Text(sales['taxPayerAddress'].toString())),
-                                                        DataCell(Text(sales['taxPayerEmail'].toString())),
-                                                        DataCell(Text(sales['taxPayerPhone'].toString())),
-                                                        DataCell(Text(sales['taxPayerWebsite'].toString())),
-                                                        DataCell(Text(sales['deviceID'].toString())),
-                                                        DataCell(Text(sales['activationKey'].toString())),
-                                                        DataCell(Text(sales['deviceModelName'].toString())),
-                                                        DataCell(Text(sales['deviceModelVersion'].toString())),
-                                                        DataCell(
-                                                          Row(
-                                                            children: [
-                                                              IconButton(
-                                                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                                                onPressed: () {
-                                                                  showUpdatePrompt();
-                                                                },
-                                                              ),
-                                                              IconButton(
-                                                                icon: const Icon(Icons.credit_card_outlined, color: Colors.blue),
-                                                                onPressed: () {
-                                                                  
-                                                                },
-                                                              ),
-                                                              IconButton(
-                                                                icon: const Icon(Icons.delete, color: Colors.red),
-                                                                onPressed: () async {
-                                                                  
-                                                                },
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    );
-                                                  }).toList(),
+                                                    ),
+                                                    IconButton(
+                                                      icon: const Icon(Icons.credit_card_outlined, color: Colors.blue),
+                                                      onPressed: () {
+                                                        
+                                                      },
+                                                    ),
+                                                    IconButton(
+                                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                                      onPressed: () async {
+                                                        
+                                                      },
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                            ),
-                                          ),
-                                        ),
+                                            ],
+                                          );
+                                        }).toList(),
                                       ),
                                     ),
                                   ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+              ),
+
+              const SizedBox(height: 20,),
+              taxPayerDetails.isEmpty ?
+              CustomOutlineBtn(
+                height: 45,
+                width: 300,
+                text: "Create",
+                color: Colors.green,
+                color2: Colors.green,
+                icon:const Icon(Icons.add, color: Colors.white,),
+                onTap: () {
+                  showAddDialog();
+                },
+              )
+              :const SizedBox(height: 2,),
+              const SizedBox(height: 30,),
+              Container(
+                height: 400,
+                width: 1200,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      offset: Offset(0, 6),
+                      spreadRadius: 4,
+                      blurRadius: 6
+                    )
+                  ]
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 550,
+                        height: 350,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                              Padding(
+                                padding: const EdgeInsets.all(30.0),
+                                child: CustomOutlineBtn(
+                                  text: "Select Printer",
+                                  height: 45,
+                                  width: 600,
+                                  color: Colors.green,
+                                  color2: Colors.green,
+                                  icon: const Icon(Icons.print_rounded, color: Colors.white,),
+                                  onTap: (){
+                                    showPrinterSelectionDialog(context);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 5,),
+                              const Text("Printer name", style: TextStyle(fontSize: 14 , color: Colors.black),),
+                              Container(
+                                height: 45,
+                                width: 480,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      offset: const Offset(0, 6),
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      spreadRadius: 4
+                                    )
+                                  ]
+                                ),
+                                child: Center(
+                                  child: Text("${selectedPrinter}" , style: TextStyle(fontWeight: FontWeight.w600),),
+                                ),
+                              ),
+                              const SizedBox(height: 5,),
+                              Padding(
+                                padding: const EdgeInsets.all(30.0),
+                                child: CustomOutlineBtn(
+                                  text: "Clear Printer Name",
+                                  height: 45,
+                                  width: 600,
+                                  color: Colors.green,
+                                  color2: Colors.green,
+                                  icon: const Icon(Icons.print_rounded, color: Colors.white,),
+                                  onTap: (){
+                                    clearSelectedPrinter();
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 30),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const Text("Use invoices" , style: TextStyle(fontSize: 14, color: Colors.black),),
+                                        const SizedBox(width: 10,),
+                                        Switch(
+                                          activeColor: Colors.blue,
+                                          value: isInvoice,
+                                          onChanged: (value){
+                                            setState(() {
+                                              isInvoice = value;
+                                              isReceipt = false;
+                                              _saveReceiptSetting(false);
+                                            });
+                                            _saveInvoiceSetting(value);
+                                          }
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        const Text("Use receipts" , style: TextStyle(fontSize: 14  , color: Colors.black),),
+                                        const SizedBox(width: 10,),
+                                        Switch(
+                                          activeColor: Colors.blue,
+                                          value: isReceipt,
+                                          onChanged: (value){
+                                            setState(() {
+                                              isReceipt = value;
+                                              isInvoice = false;
+                                              _saveInvoiceSetting(false);
+                                            });
+                                            _saveReceiptSetting(value);
+                                          }
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),  
+                              
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 550,
+                        height: 350,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                          color: Colors.grey.shade200
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Container(
+                              height: 200,
+                              width: 200,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10.0),
+                                border: Border.all(color: Colors.green , width: 1)
+                              ),
+                              child: FutureBuilder(
+                                future: loadLogoBytes(),
+                                builder: (context , snapshot){
+                                  if(snapshot.hasData){
+                                    return Image.memory(snapshot.data!, width: 100,);
+                                  }else{
+                                    return Center(child: Text("No logo uploaded"));
+                                  }
+                                }),
+                            ),
+                            const SizedBox(height: 5,),
+                            CustomOutlineBtn(
+                              text: "Pick Logo",
+                              height: 40,
+                              width: 200,
+                              color: Colors.green,
+                              color2: Colors.green,
+                              icon: const Icon(Icons.image, color: Colors.white,),
+                              onTap: ()async{
+                                await pickAndSaveLogo();
+                                Navigator.pushReplacement(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (_, __, ___) => const CompanydetailsPage(),
+                                    transitionDuration: Duration.zero,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 10,),
+                            CustomOutlineBtn(
+                              text: "Remove Logo",
+                              height: 40,
+                              width: 200,
+                              color: Colors.redAccent,
+                              color2: Colors.red,
+                              icon: const Icon(Icons.delete, color: Colors.white,),
+                              onTap: ()async{
+                                await deleteLogo();
+                                Navigator.pushReplacement(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (_, __, ___) => const CompanydetailsPage(),
+                                    transitionDuration: Duration.zero,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      )
                     ],
                   ),
-                )
-            ),
-            SizedBox(height: 30,),
-            Container(
-              height: 400,
-              width: 1200,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    offset: Offset(0, 6),
-                    spreadRadius: 4,
-                    blurRadius: 6
-                  )
-                ]
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 550,
-                      height: 350,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          taxPayerDetails.isEmpty ?
-                          CustomOutlineBtn(
-                                height: 45,
-                                width: 300,
-                                text: "Create",
-                                color: Colors.green,
-                                color2: Colors.green,
-                                icon:const Icon(Icons.add, color: Colors.white,),
-                                onTap: () {
-                                  showAddDialog();
-                                },
-                              )
-                            :const SizedBox(height: 2,),
-                            Padding(
-                              padding: const EdgeInsets.all(30.0),
-                              child: CustomOutlineBtn(
-                                text: "Select Printer",
-                                height: 45,
-                                width: 600,
-                                color: Colors.green,
-                                color2: Colors.green,
-                                icon: const Icon(Icons.print_rounded, color: Colors.white,),
-                                onTap: (){
-                                  showPrinterSelectionDialog(context);
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 5,),
-                            Container(
-                              height: 45,
-                              width: 480,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    offset: Offset(0, 6),
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    spreadRadius: 4
-                                  )
-                                ]
-                              ),
-                              child: Center(
-                                child: Text("${selectedPrinter}" , style: TextStyle(fontWeight: FontWeight.w600),),
-                              ),
-                            ),
-                            const SizedBox(height: 5,),
-                            Padding(
-                              padding: const EdgeInsets.all(30.0),
-                              child: CustomOutlineBtn(
-                                text: "Clear Printer Name",
-                                height: 45,
-                                width: 600,
-                                color: Colors.green,
-                                color2: Colors.green,
-                                icon: const Icon(Icons.print_rounded, color: Colors.white,),
-                                onTap: (){
-                                  clearSelectedPrinter();
-                                },
-                              ),
-                            )
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 550,
-                      height: 350,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10.0),
-                        color: Colors.grey.shade200
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          Container(
-                            height: 200,
-                            width: 200,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10.0),
-                              border: Border.all(color: Colors.green , width: 1)
-                            ),
-                            child: FutureBuilder(
-                              future: loadLogoBytes(),
-                              builder: (context , snapshot){
-                                if(snapshot.hasData){
-                                  return Image.memory(snapshot.data!, width: 100,);
-                                }else{
-                                  return Center(child: Text("No logo uploaded"));
-                                }
-                              }),
-                          ),
-                          const SizedBox(height: 5,),
-                          CustomOutlineBtn(
-                            text: "Pick Logo",
-                            height: 40,
-                            width: 200,
-                            color: Colors.green,
-                            color2: Colors.green,
-                            icon: const Icon(Icons.image, color: Colors.white,),
-                            onTap: ()async{
-                              await pickAndSaveLogo();
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => const CompanydetailsPage(),
-                                  transitionDuration: Duration.zero,
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 10,),
-                          CustomOutlineBtn(
-                            text: "Remove Logo",
-                            height: 40,
-                            width: 200,
-                            color: Colors.redAccent,
-                            color2: Colors.red,
-                            icon: const Icon(Icons.delete, color: Colors.white,),
-                            onTap: ()async{
-                              await deleteLogo();
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => const CompanydetailsPage(),
-                                  transitionDuration: Duration.zero,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
                 ),
-              ),
-            )  ,
-            
-        ],
+              )  ,
+              
+          ],
+        ),
       ),
     );
   }

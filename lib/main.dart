@@ -163,6 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final Directory inputFolder = Directory(r'C:\Fiscal\Input');
   final Directory signedFolder = Directory(r'C:\Fiscal\Signed');
   final Directory unsignedFolder = Directory(r'C:\Fiscal\UnSigned');
+  final Directory originalFilesFolder = Directory(r'C:\Fiscal\OriginalFiles');
   DatabaseHelper dbHelper =  DatabaseHelper();
   StreamSubscription<WatchEvent>? inputSub;
   StreamSubscription<WatchEvent>? signedSub;
@@ -215,8 +216,8 @@ class _MyHomePageState extends State<MyHomePage> {
   int receiptsPendingSubmission =0;
   String? creditReason;
   String? creditedInvoice;
-  int isReceipt = 1;
-  int isInvoice = 0;
+  bool isReceipt = false;
+  bool isInvoice = false;
   String? currentInvoiceSubtotal;
   String? receipttotalVat;
   String? receiptinvoiceTotal;
@@ -236,6 +237,16 @@ class _MyHomePageState extends State<MyHomePage> {
     fetchDayReceiptCounter();
     fetchReceiptsPending();
     fetchReceiptsSubmitted();
+    _loadSettings();
+  }
+
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isReceipt = prefs.getBool('isReceipt') ?? false; // default = false
+      isInvoice = prefs.getBool('isInvoice') ?? false;
+    });
   }
 
 
@@ -3114,11 +3125,11 @@ Future<String> getConfig() async {
 
     try {
       final uri = Uri.parse(
-        isReceipt == 1
+        isReceipt == true
             ? "http://localhost:5000/extract_receipt"
             : "http://localhost:5000/extract_invoice"
       );
-
+        
       final request = http.MultipartRequest('POST', uri)
         ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
@@ -3185,9 +3196,7 @@ Future<String> getConfig() async {
             final Map<String, dynamic> totals = creditNoteDetails['creditNote_totals'];
             final String reference = creditNoteDetails['reference_number'];
             final String reason = creditNoteDetails['reason_for_credit'] ?? 'Not Provided';
-
             currentInvoiceNumber = creditNoteDetails['credit_note_number'];
-
             setState(() {
               creditReason = reason;
               creditedInvoice = reference;
@@ -3195,74 +3204,8 @@ Future<String> getConfig() async {
               receiptinvoiceTotal = totals['credit_total'];
               //currentInvoiceSubtotal = totals['invoice_subtotal'];
               receipttotalVat = totals['total_vat'];
-              //paid = totals['paid'];
             });
-
             await generateCreditFiscalJSON();
-            final destPath = path.join(signedFolder.path, path.basename(file.path));
-            await file.rename(destPath);
-            print("📁 Moved to Signed: ${path.basename(destPath)}");
-          }
-
-        } else {
-          // Invoice branch
-          if (documentType == 'invoice') {
-            // final List<dynamic> tableData = responseData['line_items'];
-            // final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
-
-            // setState(() {
-            //   invoiceDetails = invoiceDetailsInner;
-            //   transactionCurrency = invoiceDetailsInner['currency'];
-            //   currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
-
-            //   if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-            //     selectedCustomer.clear();
-            //   } else {
-            //     selectedCustomer.add({
-            //       'customerName': invoiceDetailsInner['customer_name'],
-            //       'customerVAT': invoiceDetailsInner['buyer_vat'],
-            //       'customerTIN': invoiceDetailsInner['buyer_tin'],
-            //       'customerPhone': invoiceDetailsInner['phone'],
-            //       'customerEmail': invoiceDetailsInner['email'],
-            //     });
-            //   }
-            // });
-
-            // print("adding items");
-            // await addItem(tableData);
-            // print("done with adding items");
-            // await generateFiscalJSON();
-            // await submitReceipt();
-
-            // final destPath = path.join(signedFolder.path, path.basename(file.path));
-            // await file.rename(destPath);
-            // print("📁 Moved to Signed: ${path.basename(destPath)}");
-            final List<dynamic> tableData = responseData['line_items'];
-            final Map<String, dynamic> invoiceDetailsInner = responseData['totals'];
-
-            setState(() {
-              invoiceDetails = invoiceDetailsInner;
-              transactionCurrency = responseData['currency'];
-              currentInvoiceNumber = responseData['invoice_number'];
-
-              // if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
-              //   selectedCustomer.clear();
-              // } else {
-              //   selectedCustomer.add({
-              //     'customerName': invoiceDetailsInner['customer_name'],
-              //     'customerVAT': invoiceDetailsInner['buyer_vat'],
-              //     'customerTIN': invoiceDetailsInner['buyer_tin'],
-              //     'customerPhone': invoiceDetailsInner['phone'],
-              //     'customerEmail': invoiceDetailsInner['email'],
-              //   });
-              // }
-            });
-            print("adding items");
-            await addItem(tableData);
-            print("done with adding items");
-            await generateFiscalJSON();
-            await submitReceipt();
-
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
@@ -3273,6 +3216,56 @@ Future<String> getConfig() async {
               "$stampQRData",
               "$stampVerificationCode"          // replace with the actual QR data
             );
+          }
+
+        } else {
+          // Invoice branch
+          if (documentType == 'invoice') {
+            final List<dynamic> tableData = responseData['line_items'];
+            final Map<String, dynamic> invoiceDetailsInner = responseData['invoice_details'];
+
+            setState(() {
+              invoiceDetails = invoiceDetailsInner;
+              transactionCurrency = invoiceDetailsInner['currency'];
+              currentInvoiceNumber = invoiceDetailsInner['invoice_number'];
+
+              if (invoiceDetailsInner['customer_name'] == 'Cash' || invoiceDetailsInner['customer_name'] == '') {
+                selectedCustomer.clear();
+              } else {
+                final buyerAddress = invoiceDetailsInner['buyerAddress'];
+                selectedCustomer.add({
+                  'customerName': invoiceDetailsInner['customer_name'],
+                  'customerVAT': invoiceDetailsInner['buyer_vat'],
+                  'customerTIN': invoiceDetailsInner['buyer_tin'],
+                  'customerPhone': invoiceDetailsInner['phone'],
+                  'customerEmail': invoiceDetailsInner['email'],
+                  'houseNO': buyerAddress['houseNo'],
+                  'street': buyerAddress['street'],
+                  'province': buyerAddress['province'],
+                  'city': buyerAddress['city']
+                });
+              }
+            });
+            print("adding items");
+            await addItem(tableData);
+            print("done with adding items");
+            await generateFiscalJSON();
+            bool success = await submitReceipt();
+            if(success == true){
+              final destPath = path.join(originalFilesFolder.path, path.basename(file.path));
+              await file.rename(destPath);
+              print("📁 Moved to Original Files: ${path.basename(destPath)}");
+              await stampInvoice(
+                File(destPath),
+                  "$stampDayNo",                         // replace with your dynamic day number
+                  "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+                  "$stampQRData",
+                  "$stampVerificationCode"          // replace with the actual QR data
+              );
+            }else{
+              final destPath = path.join(unsignedFolder.path , path.basename(file.path));
+              await file.rename(destPath);
+            }
           } else if (documentType == 'credit_note') {
             final Map<String, dynamic> creditNoteDetails = responseData['credit_note_details'];
             final List<dynamic> tableData = responseData['line_items'];
@@ -3290,6 +3283,13 @@ Future<String> getConfig() async {
             final destPath = path.join(signedFolder.path, path.basename(file.path));
             await file.rename(destPath);
             print("📁 Moved to Signed: ${path.basename(destPath)}");
+            await stampInvoice(
+              File(destPath),
+              "$stampDayNo",                         // replace with your dynamic day number
+              "$stampReceiptGlobalNumber",                 // replace with actual global receipt number
+              "$stampQRData",
+              "$stampVerificationCode"          // replace with the actual QR data
+            );
           }
         }
       } else {
@@ -3628,7 +3628,8 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl,invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            isReceipt ?
+            handleReceiptPrint(jsonData, qrurl, creditQrData) : null;
            // handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             taxAmount = 0.0;
@@ -3684,7 +3685,8 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            isReceipt ?
+            handleReceiptPrint(jsonData, qrurl, creditQrData) : null;
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
 
@@ -3741,7 +3743,8 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            isReceipt ?
+            handleReceiptPrint(jsonData, qrurl, creditQrData) : null;
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             taxAmount = 0.0;
@@ -3799,7 +3802,8 @@ Future<void> generateCreditFiscalJSON() async{
             },conflictAlgorithm: ConflictAlgorithm.replace);
             print("Data inserted successfully!");
             //print58mmAdvanced(jsonData, qrurl, invoiceId);
-            handleReceiptPrint(jsonData, qrurl, creditQrData);
+            isReceipt ?
+            handleReceiptPrint(jsonData, qrurl, creditQrData) : null;
             //generateCreditnoteFromJson(jsonData , qrurl , creditQrData , invoiceNumber);
             //handleReceiptPrint58mm(jsonData, qrurl, creditQrData);
             taxAmount = 0.0;
